@@ -16,3 +16,22 @@
 	pip freeze > requirments.txt
 ```
 
+## Connect to MySQL
+```
+    mysql -h <endpoint> -P 3306 -u <mymasteruser> -p
+```
+
+## Migration
+```
+    alembic revision -m "REVISION NAME"
+    alembic upgrade head
+```
+## Alembic downgrade
+```
+    alembic downgrade -1
+```
+
+## Run Service
+```
+    make serve
+```
