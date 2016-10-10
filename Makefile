@@ -18,6 +18,5 @@ test: clean
 clean:
 	sh scripts/clean.sh
 
-
 requirements.txt: requirements.in
 	pip-compile --no-index requirements.in
