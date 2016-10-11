@@ -18,7 +18,7 @@ class Mapper:
 
     @staticmethod
     @abstractmethod
-    def build_map(record):
+    def _build_map(record):
         raise NotImplementedError
 
     @classmethod

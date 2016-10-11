@@ -8,7 +8,7 @@ class AccessTokenMapper(Mapper):
     _ENTITY = AccessToken
 
     @staticmethod
-    def build_map(record):
+    def _build_map(record):
         return {
             'user_id': record.user_id,
             'access_token': record.access_token,
