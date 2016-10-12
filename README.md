@@ -1,28 +1,44 @@
 # ParkingFinder
 
-## Development 
+## Setup Vagrant Environment
+
 ```
-    sudo apt-get install git
+    # Install VirtualBox from: www.virtualbox.org/wiki/Downloads
+    # Install Vagrant from: www.vagrantup.com/downloads.html
+
 	git clone https://github.com/Big-Lemon/ParkingFinder.git
 	cd ParkingFinder/
-	sudo sh setup_env.sh
-	virtualenv env
-	source env/bin/activate
-	export CLAY_CONFIG='config/development.json'
-	make bootstrap
+	vagrant box add ubuntu/trusty64
+
+	# boot Vagrant environment
+	vagrant up
+
+	# ssh Virtual Machine
+	vagrant ssh
+```
+Vagrant will synchronize ParkingFinder/ to the /vagrant directory
+in vm, and it forwards the port 8888 of vm to host's 8888.
+
+## Bootstrap Project
+```
+    vagrant ssh
+    # in vm
+    cd /vagrant
+    . env/bin/activate
+    make bootstrap
 ```
 
-# Install MySQL
+## Run Tests
 ```
-    sudo apt-get update
-    sudo apt-get install mysql-server-5.6
-    sudo mysql_secure_installation
+    make test
 ```
-After the MySQL root account is created, manually insert the
-password and username in /config/development.json
-(default password will be 'development')
 
-## Update Python Packages
+## Serve
+```
+    make serve
+```
+
+## Install New Python Packages
 ```
 	pip install [package]
 	pip freeze > requirments.txt
@@ -30,7 +46,7 @@ password and username in /config/development.json
 
 ## Connect to MySQL
 ```
-    mysql -h <endpoint>/<db_name> -P 3306 -u <mymasteruser> -p
+    mysql -h localhost/ParkingFinder -P 3306 -u root -p development
 ```
 
 ## DB Migration
@@ -43,12 +59,3 @@ password and username in /config/development.json
     alembic downgrade -1
 ```
 
-## Run Tests
-```
-    make test
-```
-
-## Serve
-```
-    make serve
-```
