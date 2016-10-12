@@ -1,10 +1,13 @@
 project := parkingfinder
+
 export CLAY_CONFIG=config/development.json
 
-
 .PHONY: bootstrap
-bootstrap: clean
+bootstrap: clean upgrade
 	pip install -r requirements.txt
+
+.PHONY: bootstrap_db
+    python
 
 .PHONY: serve
 serve:
@@ -17,6 +20,15 @@ test: clean
 .PHONY: clean
 clean:
 	sh scripts/clean.sh
+
+.PHONY: upgrade
+upgrade:
+    alembic upgrade head
+
+.PHONY: downgrade
+downgrade:
+    alembic downgrade -1
+
 
 requirements.txt: requirements.in
 	pip-compile --no-index requirements.in
