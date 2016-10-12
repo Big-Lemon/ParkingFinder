@@ -6,27 +6,28 @@
     # Install VirtualBox from: www.virtualbox.org/wiki/Downloads
     # Install Vagrant from: www.vagrantup.com/downloads.html
 
-	git clone https://github.com/Big-Lemon/ParkingFinder.git
-	cd ParkingFinder/
-	vagrant box add ubuntu/trusty64
+    git clone https://github.com/Big-Lemon/ParkingFinder.git
+    cd ParkingFinder/
+    vagrant box add ubuntu/trusty64
 
-	# boot Vagrant environment
-	vagrant up
+    # boot Vagrant environment
+    vagrant up
 
-	# ssh Virtual Machine
-	vagrant ssh
+    # ssh Virtual Machine
+    vagrant ssh
 ```
 Vagrant will synchronize ParkingFinder/ to the /vagrant directory
 in vm, and it forwards the port 8888 of vm to host's 8888.
 
 ## Bootstrap Project
 ```
-    vagrant ssh
+    vagrant ssh     # ssh into virtual machine
     # in vm
     cd /vagrant
-    virtualenv env
-    . env/bin/activate
-    make bootstrap
+    virtualenv env  
+    . env/bin/activate  # activate virtualenv
+    make bootstrap  	# install dependencies
+    make bootstrap_db   # create database and tables
 ```
 
 ## Run Tests
@@ -41,8 +42,8 @@ in vm, and it forwards the port 8888 of vm to host's 8888.
 
 ## Install New Python Packages
 ```
-	pip install [package]
-	pip freeze > requirments.txt
+    pip install [package]
+    pip freeze > requirments.txt
 ```
 
 ## Connect to MySQL
@@ -54,9 +55,10 @@ in vm, and it forwards the port 8888 of vm to host's 8888.
 ```
     # upgrade
     alembic revision -m "REVISION NAME"
-    alembic upgrade head
+    # modify revision file in alembic/version/
+    make upgrade_db
 
     #downgrade
-    alembic downgrade -1
+    make downgrade_db
 ```
 
