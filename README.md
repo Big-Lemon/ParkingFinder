@@ -24,6 +24,7 @@ in vm, and it forwards the port 8888 of vm to host's 8888.
     vagrant ssh
     # in vm
     cd /vagrant
+    virtualenv env
     . env/bin/activate
     make bootstrap
 ```
