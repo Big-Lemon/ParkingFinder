@@ -13,8 +13,8 @@ class AccessToken(Entity):
     """
     user_id = StringType(required=True)
     access_token = StringType(required=True)
-    issued_at = DateTimeType(required=True)
-    expires_at = DateTimeType(required=True)
+    issued_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
+    expires_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
 
     @classmethod
     def is_expired(cls):

@@ -1,6 +1,8 @@
 project := parkingfinder
+test_folder := tests
 
 export CLAY_CONFIG=config/development.json
+export PYTHONPATH=.
 
 .PHONY: bootstrap
 bootstrap: clean 
@@ -24,8 +26,8 @@ serve:
 	python serve.py
 
 .PHONY: test
-test: clean
-	echo "Tests are NotImplemented.."
+test: clean bootstrap_db
+	py.test --cov=ParkingFinder $(test_folder)
 
 .PHONY: clean
 clean:
