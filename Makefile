@@ -1,7 +1,8 @@
 project := parkingfinder
 test_folder := tests
+default_config := config/development.json
 
-export CLAY_CONFIG=config/development.json
+[ -z "$CLAY_CONFIG" ] && export CLAY_CONFIG={$default_config}
 export PYTHONPATH=.
 
 .PHONY: bootstrap

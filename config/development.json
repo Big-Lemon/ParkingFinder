@@ -8,6 +8,6 @@
 		"port": "3306",
 		"username": "root",
 		"password": "development",
-		"database": "ParkingFinder_dev"
+		"database": "dev"
 	}
 }
