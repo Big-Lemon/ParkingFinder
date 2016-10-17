@@ -2,3 +2,4 @@ env/
 config/secret.json
 .coverage
 .cache/
+.vagrant/
