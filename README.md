@@ -19,7 +19,8 @@
 Vagrant will synchronize ParkingFinder/ to the /vagrant directory
 in vm, and it forwards the port 8888 of vm to host's 8888.
 
-## Bootstrap Project
+## Install
+Install dependencies for project in virtual environment
 ```
     vagrant ssh     # ssh into virtual machine
     # in vm
@@ -30,14 +31,11 @@ in vm, and it forwards the port 8888 of vm to host's 8888.
     make bootstrap_db   # create database and tables
 ```
 
-## Run Tests
+## Activate Virtual Environment
+Activate the environment before doing anything else because all the 
+dependencies are installed in environment
 ```
-    make test
-```
-
-## Serve
-```
-    make serve
+    . env/bin/activate
 ```
 
 ## Install New Python Packages
@@ -48,7 +46,8 @@ in vm, and it forwards the port 8888 of vm to host's 8888.
 
 ## Connect to MySQL
 ```
-    mysql -h localhost/ParkingFinder -P 3306 -u root -p development
+    mysql -h localhost/[TABLE_NAME] -P 3306 -u root -p
+    # default password: development
 ```
 
 ## DB Migration
@@ -62,3 +61,12 @@ in vm, and it forwards the port 8888 of vm to host's 8888.
     make downgrade_db
 ```
 
+# Run Tests
+```
+    make test
+```
+
+## Serve
+```
+    make serve
+```
