@@ -1,5 +1,5 @@
-import pytest
 import datetime
+import pytest
 
 from doubles import expect
 from sqlalchemy.orm.exc import NoResultFound
