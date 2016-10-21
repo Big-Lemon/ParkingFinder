@@ -6,7 +6,7 @@
     # Install VirtualBox from: www.virtualbox.org/wiki/Downloads
     # Install Vagrant from: www.vagrantup.com/downloads.html
 
-    git clone https://github.com/Big-Lemon/ParkingFinder.git
+    git clone git@github.com:Big-Lemon/ParkingFinder.git
     cd ParkingFinder/
     vagrant box add ubuntu/trusty64
 

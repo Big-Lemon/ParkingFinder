@@ -26,3 +26,4 @@ class AccessToken(Base):
                 str(self.expires_at),
                 str(self.issued_at),
         )
+

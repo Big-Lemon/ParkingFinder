@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from ParkingFinder.mappers import Mapper
 from ParkingFinder.entities.access_token import AccessToken
+from ParkingFinder.mappers import Mapper
 from ParkingFinder.tables.access_token import AccessToken as AccessTokenModel
 
 
