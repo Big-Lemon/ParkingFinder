@@ -1,16 +1,14 @@
 project := parkingfinder
 test_folder := tests
 
-export CLAY_CONFIG=config/development.json
-
 export PYTHONPATH=.
 
 .PHONY: bootstrap
-bootstrap: clean 
+bootstrap: clean
 	pip install -r requirements.txt
 
 .PHONY: bootstrap_db
-bootstrap_db: drop_db create_db upgrade_db 
+bootstrap_db: drop_db create_db upgrade_db
 
 .PHONY: drop_db
 drop_db:

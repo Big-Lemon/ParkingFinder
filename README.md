@@ -25,7 +25,8 @@ Install dependencies for project in virtual environment
     vagrant ssh     # ssh into virtual machine
     # in vm
     cd /vagrant
-    virtualenv env  
+    virtualenv env
+    export CLAY_CONFIG='config/development.json'
     . env/bin/activate  # activate virtualenv
     make bootstrap  	# install dependencies
     make bootstrap_db   # create database and tables
