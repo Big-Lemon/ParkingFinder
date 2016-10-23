@@ -64,7 +64,7 @@ dependencies are installed in environment
 
 # Run Tests
 ```
-    make test
+    CLAY_CONFIG='config/test.json' make test
 ```
 
 ## Serve
