@@ -3,3 +3,4 @@ config/secret.json
 .coverage
 .cache/
 .vagrant/
+*.pyc
