@@ -11,7 +11,7 @@ def create_session():
     """Provide a transactional scope around a series of operations."""
     try:
         yield session
-        session.commit(0)
+        session.commit()
     except Return:
         session.commit()
         raise

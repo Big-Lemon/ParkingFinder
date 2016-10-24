@@ -11,6 +11,12 @@ class AccessTokenRepository(object):
     @staticmethod
     @coroutine
     def read_one(access_token):
+        """
+
+        :param access_token:
+        :return:
+        :raises NoResultFound:
+        """
         with create_session() as session:
             access_token = session.query(AccessToken).filter(
                 AccessToken.access_token == access_token
@@ -64,3 +70,23 @@ class AccessTokenRepository(object):
                 session.add(_token)
                 entity = AccessTokenMapper.to_entity(record=_token)
                 raise Return(entity)
+
+    @staticmethod
+    @coroutine
+    def remove(access_token):
+        """
+        remove a access_token if exist
+
+        :param str access_token:
+        :return:
+        """
+        with create_session() as session:
+            token = session.query(AccessToken).filter(
+                AccessToken.access_token == access_token
+            ).delete()
+            raise Return(token)
+
+
+
+
+

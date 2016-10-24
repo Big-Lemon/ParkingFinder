@@ -26,7 +26,7 @@ serve:
 
 .PHONY: test
 test: clean bootstrap_db
-	py.test --cov-report term-missing --cov=ParkingFinder $(test_folder)
+	py.test -s -v --cov-report term-missing --cov=ParkingFinder $(test_folder)
 
 .PHONY: clean
 clean:

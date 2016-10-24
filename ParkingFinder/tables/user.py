@@ -15,8 +15,8 @@ class Users(Base):
     user_id = Column(String(64), primary_key=True)
     first_name = Column(String(32), nullable=False)
     last_name = Column(String(32), nullable=False)
-    email = Column(String(255), nullable=True)
-    activated_vehicle = Column(String(8), nullable=True)
+    activated_vehicle = Column(String(7), nullable=True)
+    profile_picture_url = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
@@ -24,14 +24,14 @@ class Users(Base):
         return 'user_id: {}, ' \
                'first_name: {}, ' \
                'last_name: {}, ' \
-               'email: {}, ' \
+               'profile_picture_url: {}, ' \
                'activated_vehicle: {}, ' \
                'created_at: {}, ' \
                'updated_at: {}'.format(
                 self.user_id,
                 self.first_name,
                 self.last_name,
-                self.email,
+                self.profile_picture_url,
                 self.activated_vehicle,
                 self.created_at,
                 self.updated_at,

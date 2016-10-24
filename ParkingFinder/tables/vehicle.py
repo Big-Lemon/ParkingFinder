@@ -14,7 +14,7 @@ class Vehicles(Base):
     brand = Column(String(32), nullable=False)
     model = Column(String(32), nullable=False)
     color = Column(String(32), nullable=False)
-    year  = Column(Integer, nullable=False)
+    year = Column(Integer, nullable=False)
 
     def __repr__(self):
         return 'plate: {}, ' \

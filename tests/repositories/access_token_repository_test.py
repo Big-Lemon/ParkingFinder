@@ -65,3 +65,32 @@ def test_upsert():
     assert token.expires_at == datetime.datetime(2050, 12, 14, 5, 12, 31)
     assert token.user_id == mocked_token.user_id
     assert token.access_token == mocked_token.access_token
+
+
+@pytest.mark.gen_test
+def test_remove():
+    mocked_token = AccessToken.get_mock_object(overrides={'user_id': 'valid_account'})
+    yield module.AccessTokenRepository.upsert(
+        access_token=mocked_token.access_token,
+        expires_at=mocked_token.expires_at,
+        user_id=mocked_token.user_id,
+        issued_at=mocked_token.issued_at,
+    )
+
+    removed_row = yield module.AccessTokenRepository.remove(
+        access_token=mocked_token.access_token
+    )
+    assert removed_row == 1
+
+    with pytest.raises(NoResultFound):
+        yield module.AccessTokenRepository.read_one(access_token=mocked_token.access_token)
+
+
+@pytest.mark.gen_test
+def test_remove_with_access_token_not_exist():
+    removed_row = yield module.AccessTokenRepository.remove(
+        access_token='acc_not_exist'
+    )
+
+    assert removed_row == 0
+
