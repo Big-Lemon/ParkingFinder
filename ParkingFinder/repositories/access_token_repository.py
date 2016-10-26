@@ -81,12 +81,10 @@ class AccessTokenRepository(object):
         :return:
         """
         with create_session() as session:
-            token = session.query(AccessToken).filter(
+            rows = session.query(AccessToken).filter(
                 AccessToken.access_token == access_token
             ).delete()
-            raise Return(token)
+            if rows == 0:
+                raise NoResultFound
 
-
-
-
-
+            raise Return(rows)

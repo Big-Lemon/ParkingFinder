@@ -88,9 +88,7 @@ def test_remove():
 
 @pytest.mark.gen_test
 def test_remove_with_access_token_not_exist():
-    removed_row = yield module.AccessTokenRepository.remove(
-        access_token='acc_not_exist'
-    )
-
-    assert removed_row == 0
-
+    with pytest.raises(module.NoResultFound):
+        yield module.AccessTokenRepository.remove(
+            access_token='acc_not_exist'
+        )

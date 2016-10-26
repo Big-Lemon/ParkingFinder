@@ -4,8 +4,8 @@ from doubles import expect
 from schematics.exceptions import ValidationError
 from sqlalchemy.orm.exc import NoResultFound
 
-from ParkingFinder.repositories import user_repository as module
 from ParkingFinder.entities.user import User
+from ParkingFinder.repositories import user_repository as module
 
 
 @pytest.mark.gen_test
