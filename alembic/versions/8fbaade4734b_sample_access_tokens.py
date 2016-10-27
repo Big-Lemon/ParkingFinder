@@ -1,7 +1,7 @@
-"""sample access_tokens
+"""sample_access_tokens
 
-Revision ID: 551401a859af
-Revises: eeda72776a77
+Revision ID: 8fbaade4734b
+Revises: 551401a859af
 Create Date: 2016-10-16 13:59:59.194491
 
 """
@@ -13,8 +13,8 @@ from sqlalchemy.sql import table, column
 
 
 # revision identifiers, used by Alembic.
-revision = '551401a859af'
-down_revision = 'eeda72776a77'
+revision = '8fbaade4734b'
+down_revision = '551401a859af'
 branch_labels = None
 depends_on = None
 

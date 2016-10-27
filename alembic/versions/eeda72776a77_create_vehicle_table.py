@@ -1,17 +1,20 @@
-"""create_vehicle_table
+"""create_vehicle_table_
 
-Revision ID: 8fbaade4734b
-Revises: 551401a859af
-Create Date: 2016-10-22 18:01:00.381843
+Revision ID: eeda72776a77
+Revises: 83cf2d6876df
+Create Date: 2016-10-16 13:59:53.987198
 
 """
 from alembic import op
 import sqlalchemy as sa
 
+from datetime import datetime
+from sqlalchemy.sql import table, column
+
 
 # revision identifiers, used by Alembic.
-revision = '8fbaade4734b'
-down_revision = '551401a859af'
+revision = 'eeda72776a77'
+down_revision = '83cf2d6876df'
 branch_labels = None
 depends_on = None
 
@@ -29,3 +32,4 @@ def upgrade():
 
 def downgrade():
     op.drop_table('vehicles')
+

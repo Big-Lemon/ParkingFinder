@@ -28,3 +28,5 @@ def upgrade():
 
 def downgrade():
     op.drop_table('access_tokens')
+
+
