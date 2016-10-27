@@ -1,9 +1,11 @@
 from tornado.web import Application
 
 from ParkingFinder.handlers import HealthHandler
+from ParkingFinder.handlers import FacebookGraphLoginHandler
 
 app = Application([
-    (r'/health', HealthHandler)
+    (r'/health', HealthHandler),
+    (r'/auth/facebook', FacebookGraphLoginHandler)
 ])
 
 """

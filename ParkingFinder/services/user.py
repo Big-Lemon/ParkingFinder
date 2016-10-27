@@ -9,19 +9,23 @@ from ParkingFinder.repositories.user_repository import (
     UserNotFound,
     UserRepository,
 )
+from clay import config
+
+logger = config.get_logger('user')
+
 
 
 class UserService(object):
 
     @classmethod
     @coroutine
-    def login(cls, access_token):
+    def update_access_token(cls, access_token):
         """
         update/create expiration date of access_token, and create
         user if not exist, otherwise, return user's information
 
         :param AccessToken access_token:
-        :return:
+        :return AccessToken:
         """
         access_token.validate()
         token = yield AccessTokenRepository.upsert(
@@ -31,12 +35,13 @@ class UserService(object):
             issued_at=access_token.issued_at,
         )
         try:
-            user = yield cls.get_user_detail(
-                user_id=token.user_id
+            access_token = yield AccessTokenRepository.read_one(
+                access_token=token.access_token
             )
-            raise Return(user)
+            raise Return(access_token)
 
         except UserNotFound:
+            logger.info('New user login: ' + token.user_id)
             raise NotFound
 
     @staticmethod

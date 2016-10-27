@@ -8,9 +8,8 @@ from ParkingFinder.services import user as module
 
 
 @pytest.mark.gen_test
-def test_login():
+def test_update_access_token():
     mocked_access_token = AccessToken.get_mock_object()
-    mocked_user = User.get_mock_object({'user_id': mocked_access_token.user_id})
 
     expect(module.AccessTokenRepository).upsert(
         access_token=mocked_access_token.access_token,
@@ -19,12 +18,12 @@ def test_login():
         issued_at=mocked_access_token.issued_at,
     ).and_return_future(mocked_access_token)
 
-    expect(module.UserService).get_user_detail(
-        user_id=mocked_access_token.user_id
-    ).and_return_future(mocked_user)
+    expect(module.AccessTokenRepository).read_one(
+        access_token=mocked_access_token.access_token,
+    ).and_return_future(mocked_access_token)
 
-    user = yield module.UserService.login(access_token=mocked_access_token)
-    assert user == mocked_user
+    access_token = yield module.UserService.update_access_token(access_token=mocked_access_token)
+    assert mocked_access_token == access_token
 
 
 @pytest.mark.gen_test
