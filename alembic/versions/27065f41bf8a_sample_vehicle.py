@@ -77,7 +77,7 @@ def upgrade():
 def downgrade():
     for row in data:
         op.execute(
-            table.delete().where(
-                table.c.access_token == row['plate']
+            vehicles_table.delete().where(
+                vehicles_table.c.plate == row['plate']
             )
         )
