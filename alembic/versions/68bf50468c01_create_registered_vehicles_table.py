@@ -21,6 +21,7 @@ def upgrade():
         'registered_vehicles',
         sa.Column('user_id', sa.String(64), sa.ForeignKey('users.user_id')),
         sa.Column('plate', sa.String(7), sa.ForeignKey('vehicles.plate')),
+        sa.PrimaryKeyConstraint('user_id', 'plate',),
     )
 
 

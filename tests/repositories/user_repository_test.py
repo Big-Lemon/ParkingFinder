@@ -45,3 +45,10 @@ def test_upsert_with_incomplete_entity():
     # missing name
     with pytest.raises(ValidationError):
         yield module.UserRepository.upsert(user=mocked_user)
+
+
+@pytest.mark.gen_test
+def test_insert():
+    mocked_user = User.get_mock_object()
+    user = yield module.UserRepository._insert(user=mocked_user)
+    assert mocked_user == user
