@@ -35,27 +35,6 @@ def test_register():
 
 
 @pytest.mark.gen_test
-def test_logout():
-    mocked_token = AccessToken.get_mock_object()
-    expect(module.AccessTokenRepository).remove(
-        access_token=mocked_token.access_token
-    ).and_return_future(1)
-
-    yield module.UserService.logout(access_token=mocked_token.access_token)
-
-
-@pytest.mark.gen_test
-def test_logout_with_access_token_not_exist():
-    mocked_token = AccessToken.get_mock_object()
-    expect(module.AccessTokenRepository).remove(
-        access_token=mocked_token.access_token
-    ).and_raise(module.NoResultFound)
-
-    with pytest.raises(module.NotFound):
-        yield module.UserService.logout(access_token=mocked_token.access_token)
-
-
-@pytest.mark.gen_test
 def test_get_user_detail():
     mocked_user = User.get_mock_object()
     expect(module.UserRepository).read_one(

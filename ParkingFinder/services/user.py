@@ -66,24 +66,6 @@ class UserService(object):
 
     @staticmethod
     @coroutine
-    def logout(access_token):
-        """
-        Log out a user by access_token
-
-        :param str access_token:
-        :return:
-        """
-        try:
-            yield AccessTokenRepository.remove(
-                access_token=access_token
-            )
-        except NoResultFound:
-            raise NotFound
-
-        raise Return()
-
-    @staticmethod
-    @coroutine
     def get_user_detail(user_id):
         try:
             user = yield UserRepository.read_one(user_id=user_id)

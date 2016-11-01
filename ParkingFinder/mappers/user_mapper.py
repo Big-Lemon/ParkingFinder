@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from ParkingFinder.entities.user import User
 from ParkingFinder.mappers import Mapper
 from ParkingFinder.tables.user import Users

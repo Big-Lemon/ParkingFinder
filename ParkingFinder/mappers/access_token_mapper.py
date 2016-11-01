@@ -23,8 +23,8 @@ class AccessTokenMapper(Mapper):
         return {
             'user_id': entity.user_id,
             'access_token': entity.access_token,
-            'issued_at': str(entity.issued_at),
-            'expires_at': str(entity.expires_at),
+            'issued_at': (entity.issued_at - datetime(1970, 1, 1)).total_seconds(),
+            'expires_at': (entity.expires_at - datetime(1970, 1, 1)).total_seconds(),
         }
 
     @classmethod

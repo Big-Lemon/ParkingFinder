@@ -18,7 +18,8 @@ def test_mapper():
     assert model.user_id == entity.user_id
 
     record = module.AccessTokenMapper.to_record(token)
-    assert token.to_primitive() == record
+    assert token.access_token == record['access_token']
+    assert token.user_id == record['user_id']
 
 
 
