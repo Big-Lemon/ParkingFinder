@@ -60,6 +60,21 @@ class VehicleRepository(object):
             session.add(registered_vehicle_model)
             raise Return(_vehicle)
 
+    @classmethod
+    @coroutine
+    def delete_registered_vehicle(cls, user_id, vehicle):
+        """
+        Delete a relationship between an user and his car, then delete his car from db
+        :param str user_id:
+        :param Vehicle vehicle:
+        :return Vehicle vehicle: deleted vehicle
+        """
+
+        with create_session() as session:
+            session.query(RegisteredVehicles).filter(RegisteredVehicles.user_id == user_id).delete()
+            _vehicle = yield cls._delete_vehicle(vehicle=vehicle)
+            raise Return(_vehicle)
+
     @staticmethod
     @coroutine
     def _insert_vehicle(vehicle):
@@ -74,3 +89,23 @@ class VehicleRepository(object):
             _vehicle = VehicleMapper.to_model(vehicle)
             session.add(_vehicle)
             raise Return(vehicle)
+
+    @staticmethod
+    @coroutine
+    def _delete_vehicle(vehicle):
+        """
+        Delete a vehicle in db
+
+        :param Vehicle vehicle:
+        :return Vehicle vehicle: deleted vehicle
+        """
+        with create_session() as session:
+            vehicle.validate()
+            # _vehicle = VehicleMapper.to_model(vehicle)
+            # session.delete(_vehicle)
+            session.query(Vehicles).filter(Vehicles.plate == vehicle.plate).delete()
+            raise Return(vehicle)
+
+
+class VehicleNotFound(NotFound):
+    error = 'Vehicle Not Found'
