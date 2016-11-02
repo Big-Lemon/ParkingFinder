@@ -15,6 +15,7 @@ class RealTime(Base):
     __tablename__ = 'real_time'
     __table_args__ = (PrimaryKeyConstraint('user_one_id', 'user_two_id'), )
 
+    key = Column(String(32), primary_key=True)
     user_one_id = Column(String(64), ForeignKey('users.user_id'))
     user_two_id = Column(String(64), ForeignKey('users.user_id'))
     latitude_one = Column(Float, nullable=False)
@@ -25,13 +26,15 @@ class RealTime(Base):
 
 
     def __repr__(self):
-        return 'user_one_id: {}, ' \
+        return 'key: {}, ' \
+               'user_one_id: {}, ' \
                'latitude_one: {}, ' \
                'longitude_one: {}, ' \
                'user_two_id: {}, ' \
                'latitude_two: {}, ' \
                'longitude_two: {}, ' \
                'created_at: {} '.format(
+                self.key,
                 self.user_one_id,
                 self.latitude_one,
                 self.longitude_one,
