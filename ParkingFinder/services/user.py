@@ -1,8 +1,10 @@
 from sqlalchemy.orm.exc import NoResultFound
+from schematics.exceptions import ValidationError
 from tornado.gen import coroutine, Return
 
 from ParkingFinder.base.errors import (
     NotFound,
+    InvalidEntity,
 )
 from ParkingFinder.repositories.access_token_repository import AccessTokenRepository
 from ParkingFinder.repositories.user_repository import (
@@ -53,10 +55,14 @@ class UserService(object):
         Register a new user if not exist and register a vehicle for the user
         this have checked if the car exist or not
 
-        :param User user:
+        :param: User user:
+        :raise: InvalidEntity: means the constructed entity is not consistent with its definition
         :return: User Updated User
         """
-        user.validate()
+        try:
+            user.validate()
+        except ValidationError:
+            raise InvalidEntity
 
         _user = yield UserRepository.upsert(user=user)
 
@@ -70,11 +76,13 @@ class UserService(object):
 
         :param String user_id:
         :param Vehicle vehicle:
-        :raise: NotFound
+        :raise: NotFound: requested value is not found in the database
+        :raise: InvalidEntity
         :return: Vehicle vehicle: inserted vehicle
         """
-        vehicle.validate()
+
         try:
+            vehicle.validate()
             user = yield UserRepository.read_one(user_id)
             user_vehicles = yield VehicleRepository.retrieve_vehicle_by_user(user_id=user.user_id)
             exist = False
@@ -87,6 +95,8 @@ class UserService(object):
                 _vehicle = VehicleRepository.insert_registered_vehicle(user_id=user.user_id, vehicle=vehicle)
         except NoResultFound:
             raise NotFound
+        except ValidationError:
+            raise InvalidEntity
 
         raise Return(_vehicle)
 
@@ -98,6 +108,7 @@ class UserService(object):
         Return the user information in detail with registered car information
 
         :param String user_id:
+        :raise: NotFound : user detail cannot be found
         :return: User user:
         """
         try:
@@ -122,6 +133,7 @@ class UserService(object):
 
         :param String user_id:
         :param String vehicle_plate:
+        :raise: NotFound: user detail cannot be found
         :return: updated user:
         """
         try:

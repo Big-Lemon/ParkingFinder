@@ -40,15 +40,15 @@ app = Application([
         {
             # all fields in the request payload are marked as request update
             "activated_vehicle": "124FJK3"
-            "new vehicles": [
-                {
-                    "plate": "124FJK3",
-                    "brand": "toyota",
-                    "model": "corolla",
-                    "color": "black",
-                    "year": "2016"
-                }
-            ]
+            "new vehicle":
+            {
+                "plate": "124FJK3",
+                "brand": "toyota",
+                "model": "corolla",
+                "color": "black",
+                "year": "2016"
+            }
+
         }
 
 ==============================================================================

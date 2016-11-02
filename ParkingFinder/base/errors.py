@@ -34,3 +34,10 @@ class InvalidArguments(BaseError):
     Invalid Argument
     """
     error = 'Invalid Arguments'
+
+
+class InvalidEntity(BaseError):
+    """
+    Invalid Entity
+    """
+    error = "Entity construction is not consistent with the corresponding definition "
