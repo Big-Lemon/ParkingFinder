@@ -1,9 +1,11 @@
+import datetime
 from sqlalchemy import (
     Column,
     String,
     Integer,
     Float,
     DateTime,
+    ForeignKey,
 )
 
 from ParkingFinder.tables.base import Base
@@ -15,7 +17,7 @@ class CheckInParkingSpace(Base):
     user_id = Column(String(64), ForeignKey('users.user_id'), primary_key=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
     level = Column(Integer, nullable=True)
     description = Column(String(500), nullable=True)
 
