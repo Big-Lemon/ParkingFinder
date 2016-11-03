@@ -3,11 +3,17 @@ from tornado.web import Application
 from ParkingFinder.handlers import HealthHandler
 from ParkingFinder.handlers import FacebookGraphLoginHandler
 from ParkingFinder.handlers.user_information import UserInformationHandler
+from ParkingFinder.handlers.parking_space import (
+    ParkingSpaceNearbyFetchHandler,
+    ParkingSpaceReserveHandler
+)
 
 app = Application([
     (r'/health', HealthHandler),
     (r'/auth/facebook', FacebookGraphLoginHandler),
-    (r'/user/(.*)', UserInformationHandler)
+    (r'/user/(.*)', UserInformationHandler),
+    (r'/parkingSpace/reserve/(.*)', ParkingSpaceReserveHandler),
+    (r'/parkingSpace/nearby/(.*)', ParkingSpaceNearbyFetchHandler)
 ])
 
 """
@@ -82,10 +88,10 @@ app = Application([
 
 ==============================================================================
 
-/parkingSpace/request/{user_id}?access_token={access_token}
+/parkingSpace/reserve/{user_id}?access_token={access_token}
 
     POST
-        - Request a parking space around the coordinate(x,y) or
+        - reserve a parking space around the coordinate(x,y) or
          destination name(UCLA parking lot 7,level 1) with radius r
 
         request format:
