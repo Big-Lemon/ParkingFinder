@@ -14,6 +14,7 @@ app = Application([
     (r'/user/(.*)', UserInformationHandler),
     (r'/parkingSpace/reserve/(.*)', ParkingSpaceReserveHandler),
     (r'/parkingSpace/nearby/(.*)', ParkingSpaceNearbyFetchHandler)
+    (r'/parkingSpace/realtime/(.*)',ParkingSpaceRealTimeHandler)
 ])
 
 """

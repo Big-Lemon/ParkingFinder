@@ -8,6 +8,7 @@ from tornado.web import MissingArgumentError
 from ParkingFinder.handlers.handler import BaseHandler
 from ParkingFinder.mappers.parking_space_mapper import ParkingSpaceMapper
 from ParkingFinder.services.user import UserService
+from ParkingFinder.services.parking_space import ParkingSpaceService
 from ParkingFinder.entities.parking_space import ParkingSpace
 from ParkingFinder.base.errors import (
     NotFound,
@@ -122,4 +123,67 @@ class ParkingSpaceReserveHandler(BaseHandler):
             })
 
 
+class ParkingSpaceRealTimeHandler(BaseHandler):
+
+    @coroutine
+    def get(self, user_id):
+
+        try:
+            access_token = self.get_argument('access_token', default=None)
+            # TODO: token validation
+            assert user_id
+            
+            realtime = yield ParkingSpaceService.initialize_waiting_user_location(user_id)
+            self.set_status(httplib.OK)
+            self.write({
+                'realtime': realtime 
+            })
+
+        except AssertionError:
+            self.set_status(httplib.BAD_REQUEST)
+            self.write({
+                'error': "BAD REQUEST Invalid User Id"
+            })
+        except MissingArgumentError:
+            self.set_status(httplib.BAD_REQUEST)
+            self.write({
+                'error': "BAD REQUEST Location Information Is Incomplete"
+            })
+        except NotFound:
+            self.set_status(httplib.NOT_FOUND)
+            self.write({
+                'error': "user doesn't match any other users"
+            })
+
+    @coroutine
+    def post(self, user_id):
+
+        try:
+            access_token = self.get_argument('access_token', default=None)
+            # TODO: token validation
+            assert user_id
+
+            request_body = json.loads(self.request.body)
+            _realtime = request_body.get('realtime', False)
+            realtime = yield ParkingSpaceService.update_real_time_location(_realtime)
+
+            self.set_status(httplib.OK)
+            self.write({
+                'realtime': realtime
+            })
+        except AssertionError:
+            self.set_status(httplib.BAD_REQUEST)
+            self.write({
+                'error': "BAD REQUEST Invalid User Id"
+            })
+        except InvalidEntity:
+            self.set_status(httplib.BAD_REQUEST)
+            self.write({
+                'error': "BAD REQUEST Invalid Real time"
+            })
+        except NotFound:
+            self.set_status(httplib.NOT_FOUND)
+            self.write({
+                'error': "user doesn't exist according to current provided id"
+            })
 
