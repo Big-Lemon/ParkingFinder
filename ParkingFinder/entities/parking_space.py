@@ -17,7 +17,7 @@ class ParkingSpace(Entity):
     user_id = StringType(min_length=1, max_length=64, required=True)
     latitude = FloatType(required=True)
     longitude = FloatType(required=True)
-    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
+    created_at = DateTimeType(required=True)
 
     # non-required variables
     level = IntType(required=False)
