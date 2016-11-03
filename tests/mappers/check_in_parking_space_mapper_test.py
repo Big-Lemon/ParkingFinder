@@ -4,6 +4,9 @@ from ParkingFinder.mappers import parking_space_mapper as module
 def test_mapper():
 
     parking_space = module.ParkingSpace.get_mock_object()
+    params = parking_space.to_primitive()
+    del params['level', 'description']
+    parking_space = module.ParkingSpace(params)
     model = module.CheckInParkingSpace(
         user_id=parking_space.user_id,
         latitude=parking_space.latitude,
@@ -19,6 +22,9 @@ def test_mapper():
     assert model.user_id == entity.user_id
     assert model.latitude == entity.latitude
     assert model.longitude == entity.longitude
+    assert model.created_at == entity.created_at.strftime(serialized_format)
+    assert not model.level
+    assert not model.description
 
     record = module.CheckInParkingSpaceMapper.to_record(parking_space)
     assert parking_space.to_primitive() == record
