@@ -2,7 +2,7 @@ from schematics.types import (
     StringType,
     URLType,
 )
-from schematics.types.compound import ListType
+from schematics.types.compound import ListType, ModelType
 
 from ParkingFinder.entities.entity import Entity
 from ParkingFinder.entities.vehicle import Vehicle
@@ -20,4 +20,5 @@ class User(Entity):
     # non-required variables
     profile_picture_url = URLType(max_length=255, required=False)
     activated_vehicle = StringType(max_length=7, required=False)
-    owned_vehicles = ListType(Vehicle)
+    owned_vehicles = ListType(ModelType(Vehicle))
+
