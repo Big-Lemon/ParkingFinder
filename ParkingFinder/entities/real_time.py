@@ -18,5 +18,5 @@ class RealTime(Entity):
     request_user_id = StringType(min_length=1, max_length=64, required=True)
     request_user_latitude = FloatType(required=True)
     request_user_longitude = FloatType(required=True)
-    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
+    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S')
 

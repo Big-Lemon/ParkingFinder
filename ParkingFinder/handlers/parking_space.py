@@ -11,8 +11,10 @@ from ParkingFinder.mappers.real_time_mapper import RealTimeMapper
 from ParkingFinder.services.user import UserService
 from ParkingFinder.services.parkingspace import ParkingSpaceService
 from ParkingFinder.entities.parking_space import ParkingSpace
+from ParkingFinder.entities.real_time import RealTime
 from ParkingFinder.base.errors import (
     NotFound,
+    InvalidEntity,
 )
 
 
@@ -135,6 +137,7 @@ class ParkingSpaceRealTimeHandler(BaseHandler):
             assert user_id
             
             realtime = yield ParkingSpaceService.initialize_waiting_user_location(user_id)
+
             realtime_res = RealTimeMapper.to_record(realtime)
             self.set_status(httplib.OK)
             self.write({
@@ -167,10 +170,19 @@ class ParkingSpaceRealTimeHandler(BaseHandler):
 
             request_body = json.loads(self.request.body)
             _realtime = request_body.get('realtime', False)
-            print _realtime
-            realtime = yield ParkingSpaceService.update_real_time_location(_realtime)
+
+            entity = RealTime({
+                'waiting_user_id': _realtime['waiting_user_id'],
+                'waiting_user_latitude': _realtime['waiting_user_latitude'],
+                'waiting_user_longitude': _realtime['waiting_user_longitude'],
+                'request_user_id': _realtime['request_user_id'],
+                'request_user_latitude': _realtime['request_user_latitude'],
+                'request_user_longitude': _realtime['request_user_longitude'],
+                'created_at': datetime.strptime(_realtime['created_at'], '%Y-%m-%d %H:%M:%S').isoformat()
+            })
+
+            realtime = yield ParkingSpaceService.update_real_time_location(entity)
             realtime_res = RealTimeMapper.to_record(realtime)
-            
             self.set_status(httplib.OK)
             self.write({
                 'realtime': realtime_res
