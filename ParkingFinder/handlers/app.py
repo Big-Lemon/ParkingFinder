@@ -5,7 +5,8 @@ from ParkingFinder.handlers import FacebookGraphLoginHandler
 from ParkingFinder.handlers.user_information import UserInformationHandler
 from ParkingFinder.handlers.parking_space import (
     ParkingSpaceNearbyFetchHandler,
-    ParkingSpaceReserveHandler
+    ParkingSpaceReserveHandler,
+    ParkingSpaceRealTimeHandler
 )
 
 app = Application([
@@ -13,8 +14,8 @@ app = Application([
     (r'/auth/facebook', FacebookGraphLoginHandler),
     (r'/user/(.*)', UserInformationHandler),
     (r'/parkingSpace/reserve/(.*)', ParkingSpaceReserveHandler),
-    (r'/parkingSpace/nearby/(.*)', ParkingSpaceNearbyFetchHandler)
-    (r'/parkingSpace/realtime/(.*)',ParkingSpaceRealTimeHandler)
+    (r'/parkingSpace/nearby/(.*)', ParkingSpaceNearbyFetchHandler),
+    (r'/parkingSpace/realtime/(.*)', ParkingSpaceRealTimeHandler)
 ])
 
 """

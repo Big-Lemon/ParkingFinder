@@ -7,8 +7,9 @@ from tornado.web import MissingArgumentError
 
 from ParkingFinder.handlers.handler import BaseHandler
 from ParkingFinder.mappers.parking_space_mapper import ParkingSpaceMapper
+from ParkingFinder.mappers.real_time_mapper import RealTimeMapper
 from ParkingFinder.services.user import UserService
-from ParkingFinder.services.parking_space import ParkingSpaceService
+from ParkingFinder.services.parkingspace import ParkingSpaceService
 from ParkingFinder.entities.parking_space import ParkingSpace
 from ParkingFinder.base.errors import (
     NotFound,
@@ -134,9 +135,10 @@ class ParkingSpaceRealTimeHandler(BaseHandler):
             assert user_id
             
             realtime = yield ParkingSpaceService.initialize_waiting_user_location(user_id)
+            realtime_res = RealTimeMapper.to_record(realtime)
             self.set_status(httplib.OK)
             self.write({
-                'realtime': realtime 
+                'realtime': realtime_res
             })
 
         except AssertionError:
@@ -165,11 +167,13 @@ class ParkingSpaceRealTimeHandler(BaseHandler):
 
             request_body = json.loads(self.request.body)
             _realtime = request_body.get('realtime', False)
+            print _realtime
             realtime = yield ParkingSpaceService.update_real_time_location(_realtime)
-
+            realtime_res = RealTimeMapper.to_record(realtime)
+            
             self.set_status(httplib.OK)
             self.write({
-                'realtime': realtime
+                'realtime': realtime_res
             })
         except AssertionError:
             self.set_status(httplib.BAD_REQUEST)
