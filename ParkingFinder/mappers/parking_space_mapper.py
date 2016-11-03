@@ -29,7 +29,7 @@ class ParkingSpaceMapper(Mapper):
         return params
 
 
-class CheckingInParkingSpaceMapper(ParkingSpaceMapper):
+class CheckInParkingSpaceMapper(ParkingSpaceMapper):
     _MODEL = CheckInParkingSpace
 
     @classmethod
@@ -39,7 +39,7 @@ class CheckingInParkingSpaceMapper(ParkingSpaceMapper):
         return cls._MODEL(**params)
 
 
-class CheckingOutParkingSpaceMapper(ParkingSpaceMapper):
+class CheckOutParkingSpaceMapper(ParkingSpaceMapper):
     _MODEL = CheckOutParkingSpace
 
     @classmethod
