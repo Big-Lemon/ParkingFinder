@@ -22,7 +22,7 @@ def test_mapper():
     assert model.user_id == entity.user_id
     assert model.latitude == entity.latitude
     assert model.longitude == entity.longitude
-    assert model.created_at == entity.created_at.strftime(serialized_format)
+    assert model.created_at == entity.created_at
     assert not model.level
     assert not model.description
 
