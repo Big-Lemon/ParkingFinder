@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from sqlalchemy import (
     Column,
     String,
@@ -17,7 +17,7 @@ class CheckOutParkingSpace(Base):
     user_id = Column(String(64), ForeignKey('users.user_id'), primary_key=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
     level = Column(Integer, nullable=True)
     description = Column(String(500), nullable=True)
 
@@ -28,7 +28,7 @@ class CheckOutParkingSpace(Base):
                'created_at: {}, ' \
                'level: {}, ' \
                'description: {}'.format(
-                self.space_id,
+                self.user_id,
                 self.latitude,
                 self.longitude,
                 self.created_at,
