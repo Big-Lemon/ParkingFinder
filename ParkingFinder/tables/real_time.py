@@ -5,41 +5,36 @@ from sqlalchemy import (
     Float,
     DateTime,
     ForeignKey,
-    PrimaryKeyConstraint,
 )
 
 from ParkingFinder.tables.base import Base
 
 
-class RealTime(Base):
+class RealTimes(Base):
     __tablename__ = 'real_time'
-    __table_args__ = (PrimaryKeyConstraint('user_one_id', 'user_two_id'), )
 
-    key = Column(String(32), primary_key=True)
-    user_one_id = Column(String(64), ForeignKey('users.user_id'))
-    user_two_id = Column(String(64), ForeignKey('users.user_id'))
-    latitude_one = Column(Float, nullable=False)
-    longitude_one = Column(Float, nullable=False)
-    latitude_two = Column(Float, nullable=False)
-    longitude_two = Column(Float, nullable=False)
+    waiting_user_id = Column(String(64), ForeignKey('users.user_id'), primary_key=True)
+    waiting_user_latitude = Column(Float, nullable=False)
+    waiting_user_longitude = Column(Float, nullable=False)
+    request_user_id = Column(String(64), ForeignKey('users.user_id'))
+    request_user_latitude = Column(Float, nullable=False)
+    request_user_longitude = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
     def __repr__(self):
-        return 'key: {}, ' \
-               'user_one_id: {}, ' \
-               'latitude_one: {}, ' \
-               'longitude_one: {}, ' \
-               'user_two_id: {}, ' \
-               'latitude_two: {}, ' \
-               'longitude_two: {}, ' \
+        return 'waiting_user_id: {}, ' \
+               'waiting_user_latitude: {}, ' \
+               'waiting_user_longitude: {}, ' \
+               'request_user_id: {}, ' \
+               'request_user_latitude: {}, ' \
+               'request_user_longitude: {}, ' \
                'created_at: {} '.format(
-                self.key,
-                self.user_one_id,
-                self.latitude_one,
-                self.longitude_one,
-                self.user_two_id,
-                self.latitude_two,
-                self.longitude_two,
+                self.waiting_user_id,
+                self.waiting_user_latitude,
+                self.waiting_user_longitude,
+                self.request_user_id,
+                self.request_user_latitude,
+                self.request_user_longitude,
                 self.created_at,
         )

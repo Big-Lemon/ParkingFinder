@@ -18,13 +18,12 @@ depends_on = None
 def upgrade():
      op.create_table(
         'real_time',
-        sa.Column('key', sa.String(32), primary_key=True),
-        sa.Column('user_one_id', sa.String(64),  nullable=False),
-        sa.Column('user_two_id', sa.String(64), nullable=False),
-        sa.Column('latitude_one', sa.Float, nullable=False),
-        sa.Column('longitude_one', sa.Float, nullable=False),
-        sa.Column('latitude_two', sa.Float, nullable=False),
-        sa.Column('longitude_two', sa.Float, nullable=False),
+        sa.Column('waiting_user_id', sa.String(64),  nullable=False),
+        sa.Column('waiting_user_latitude', sa.String(64), nullable=False),
+        sa.Column('waiting_user_longitude', sa.Float, nullable=False),
+        sa.Column('request_user_id', sa.Float, nullable=False),
+        sa.Column('request_user_latitude', sa.Float, nullable=False),
+        sa.Column('request_user_longitude', sa.Float, nullable=False),
         sa.Column('created_at', sa.DateTime, default=sa.func)
     )
 

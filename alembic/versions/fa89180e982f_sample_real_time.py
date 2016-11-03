@@ -23,26 +23,24 @@ depends_on = None
 
 real_time_table = table(
     'real_time',
-    column('key', sa.String),
-    column('user_one_id', sa.String),
-    column('user_two_id', sa.String),
-    column('latitude_one', sa.Float),
-    column('longitude_one', sa.Float),
-    column('latitude_two', sa.Float),
-    column('longitude_two', sa.Float),
+    column('waiting_user_id', sa.String),
+    column('waiting_user_latitude', sa.Float),
+    column('waiting_user_longitude', sa.Float),
+    column('request_user_id', sa.String),
+    column('request_user_latitude', sa.Float),
+    column('request_user_longitude', sa.Float),
     column('created_at', sa.DateTime),
 )
 
 
 data = [
     {
-    	'key': 'abcdefghijklmnopqrstuvwxyz123456',
-    	'user_one_id': 'valid_account',
-        'user_two_id': 'valid_account_1',
-        'latitude_one': 40.741895,
-        'longitude_one': -73.989308,
-        'latitude_two': 34.052234,
-        'longitude_two':  -118.243685,
+    	'waiting_user_id': 'valid_account',
+        'waiting_user_latitude': 40.741895,
+        'waiting_user_longitude': -73.989308,
+        'request_user_id': 'valid_account_1',
+        'request_user_latitude': 34.052234,
+        'request_user_longitude':  -118.243685,
         'created_at': datetime(1992, 5, 5, 10, 12, 5, 123456),
     },
 ]
