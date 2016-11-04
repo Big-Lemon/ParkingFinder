@@ -28,7 +28,7 @@ class RealTimeRepository(object):
 
     @classmethod
     @coroutine
-    def upsert(cls, realtime):
+    def upsert(cls, user_id, realtime):
         """
         Update/Insert realtime, if realtime exist, update realtime's information
         otherwise, insert a new realtime, and realtime have to be a realtime entity
@@ -41,7 +41,7 @@ class RealTimeRepository(object):
         """
 
         try:
-            _realtime = yield cls._update(realtime)
+            _realtime = yield cls._update(user_id, realtime)
             raise Return(_realtime)
 
         except NoResultFound:
@@ -50,26 +50,29 @@ class RealTimeRepository(object):
 
     @classmethod
     @coroutine
-    def _update(cls, realtime):
+    def _update(cls,
+                user_id,
+                realtime
+                ):
         """
 
         :param str user_id:
-        :param str activated_vehicle:
-        :param str profile_picture_url:
-        :return User: updated User
-        :raises NoResultFound: the user that is requested to update is not exist
+        :param Realtime realtime:
+        :return RealTime: updated RealTime
+        :raises NoResultFound: the realtime that is requested to update is not exist
         """
 
         with create_session() as session:
             _realtime = session.query(RealTimes).filter(
                 RealTimes.waiting_user_id == realtime.waiting_user_id
             ).one()
-            _realtime.waiting_user_latitude = realtime.waiting_user_latitude
-            _realtime.waiting_user_longitude = realtime.waiting_user_longitude
-            _realtime.request_user_id = realtime.request_user_id
-            _realtime.request_user_latitude = realtime.request_user_latitude
-            _realtime.request_user_longitude = realtime.request_user_longitude
-            _realtime.created_at = realtime.created_at
+            if user_id == realtime.request_user_id:
+                _realtime.request_user_latitude = realtime.request_user_latitude
+                _realtime.request_user_longitude = realtime.request_user_longitude
+            else:
+                _realtime.waiting_user_latitude = realtime.waiting_user_latitude
+                _realtime.waiting_user_longitude = realtime.waiting_user_longitude
+
             entity = RealTimeMapper.to_entity(_realtime)
 
             raise Return(entity)

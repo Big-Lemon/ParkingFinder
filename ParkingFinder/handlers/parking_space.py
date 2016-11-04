@@ -9,7 +9,7 @@ from ParkingFinder.handlers.handler import BaseHandler
 from ParkingFinder.mappers.parking_space_mapper import ParkingSpaceMapper
 from ParkingFinder.mappers.real_time_mapper import RealTimeMapper
 from ParkingFinder.services.user import UserService
-from ParkingFinder.services.parkingspace import ParkingSpaceService
+from ParkingFinder.services.parking_space import ParkingSpaceService
 from ParkingFinder.entities.parking_space import ParkingSpace
 from ParkingFinder.entities.real_time import RealTime
 from ParkingFinder.base.errors import (
@@ -181,7 +181,7 @@ class ParkingSpaceRealTimeHandler(BaseHandler):
                 'created_at': datetime.strptime(_realtime['created_at'], '%Y-%m-%d %H:%M:%S').isoformat()
             })
 
-            realtime = yield ParkingSpaceService.update_real_time_location(entity)
+            realtime = yield ParkingSpaceService.update_real_time_location(user_id=user_id, realtime=entity)
             realtime_res = RealTimeMapper.to_record(realtime)
             self.set_status(httplib.OK)
             self.write({

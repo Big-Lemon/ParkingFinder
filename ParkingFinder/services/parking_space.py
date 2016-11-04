@@ -17,7 +17,7 @@ class ParkingSpaceService(object):
 
 	@staticmethod
 	@coroutine
-	def update_real_time_location(realtime):
+	def update_real_time_location(user_id, realtime):
 		"""
 		update the real time location for both waiting user
 		and request user.
@@ -29,9 +29,7 @@ class ParkingSpaceService(object):
 			realtime.validate()
 		except ValidationError:
 			raise InvalidEntity
-
-		_realtime = yield RealTimeRepository.upsert(realtime)
-
+		_realtime = yield RealTimeRepository.upsert(user_id=user_id, realtime=realtime)
 		raise Return(_realtime)
 
 	@staticmethod

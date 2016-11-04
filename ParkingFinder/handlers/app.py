@@ -113,6 +113,66 @@ app = Application([
         return format:
             {
             }
+==============================================================================
+
+/parkingSpace/realtime/{user_id}?access_token={access_token}
+
+    GET
+        - Get the request user and request location
+        only call once 
+        after succuss then it need to call post method
+
+        request format:
+        {}
+
+        return format:
+        {
+            "realtime": 
+                {
+                    "waiting_user_id": "valid_account", 
+                    "waiting_user_longitude": 100.5, 
+                    "waiting_user_latitude": 100.5,
+                    "request_user_id": "valid_account_2", 
+                    "request_user_latitude": 100.5, 
+                    "request_user_longitude": 100.0,    
+                    "created_at": "2009-05-05 10:12:05"
+                }
+        }
+
+==============================================================================
+
+/parkingSpace/realtime/{user_id}?access_token={access_token}
+
+    POST
+        - Post his location to other users
+
+        request format:
+        {
+            "realtime": 
+                {
+                    "waiting_user_id": "valid_account", 
+                    "waiting_user_longitude": 100.5, 
+                    "waiting_user_latitude": 100.5,
+                    "request_user_id": "valid_account_2", 
+                    "request_user_latitude": 100.5, 
+                    "request_user_longitude": 100.0,    
+                    "created_at": "2009-05-05 10:12:05"
+                }
+        }
+
+        return format:
+        {
+            "realtime": 
+                {
+                    "waiting_user_id": "valid_account", 
+                    "waiting_user_longitude": 100.5, 
+                    "waiting_user_latitude": 100.5,
+                    "request_user_id": "valid_account_2", 
+                    "request_user_latitude": 100.5, 
+                    "request_user_longitude": 100.0,    
+                    "created_at": "2009-05-05 10:12:05"
+                }
+        }
 
 ==============================================================================
 
