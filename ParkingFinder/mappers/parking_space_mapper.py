@@ -34,9 +34,12 @@ class CheckInParkingSpaceMapper(ParkingSpaceMapper):
 
     @classmethod
     def _to_model(cls, entity):
-        params = entity.to_primitive()
-
-        return cls._MODEL(**params)
+        return cls._MODEL(**{
+            'user_id': entity.user_id,
+            'latitude': entity.latitude,
+            'longitude': entity.longitude,
+            'created_at': entity.created_at,
+        })
 
 
 class CheckOutParkingSpaceMapper(ParkingSpaceMapper):
@@ -44,6 +47,9 @@ class CheckOutParkingSpaceMapper(ParkingSpaceMapper):
 
     @classmethod
     def _to_model(cls, entity):
-        params = entity.to_primitive()
-
-        return cls._MODEL(**params)
+        return cls._MODEL(**{
+            'user_id': entity.user_id,
+            'latitude': entity.latitude,
+            'longitude': entity.longitude,
+            'created_at': entity.created_at,
+        })

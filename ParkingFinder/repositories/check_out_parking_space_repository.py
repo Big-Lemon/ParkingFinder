@@ -38,6 +38,7 @@ class CheckOutParkingSpaceRepository(object):
         :raises ValidationError: the parking_space provided missing required fields
         """
         assert parking_space.user_id
+        parking_space.validate()
 
         try:
             _parking_space = yield cls._update(
@@ -90,12 +91,10 @@ class CheckOutParkingSpaceRepository(object):
                 CheckOutParkingSpace.user_id == parking_space.user_id
             ).one()
 
-            if latitude:
-                _parking_space.latitude = latitude
-            if longitude:
-                _parking_space.longitude = longitude
-            if created_at:
-                _parking_space.created_at = created_at
+            _parking_space.latitude = latitude
+            _parking_space.longitude = longitude
+            _parking_space.created_at = created_at
+
             if level:
                 _parking_space.level = level
             if description:
@@ -115,7 +114,6 @@ class CheckOutParkingSpaceRepository(object):
         :return ParkingSpace: Inserted parking_space
         """
         with create_session() as session:
-            parking_space.validate()
             _parking_space = CheckOutParkingSpaceMapper.to_model(parking_space)
             session.add(_parking_space)
             raise Return(parking_space)
