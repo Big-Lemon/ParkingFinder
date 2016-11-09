@@ -6,3 +6,8 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from ParkingFinder.entities.parking_space import ParkingSpace
 from ParkingFinder.repositories import check_in_parking_space_repository as module
+
+
+# @pytest.mark.gen_test
+# def test_read_one():
+
