@@ -24,11 +24,27 @@ class FacebookGraphLoginHandler(BaseHandler, FacebookGraphMixin):
     @coroutine
     def get(self):
         """
-        this function is to handle facebook authentication process with /auth/facebook?code={code}
+        /auth/facebook?access_token={access_token}
 
-        :raise: NotFound: database fetch result not found exception
-        :raise: Exception: general exception
-        :return:
+        Validate the token and return the corresponding user if exist, otherwise create a
+        new user with empty owned_vehicles
+        request format: {}
+        return format: {
+            "first_name": "hong",
+            "last_name": "li",
+            "profile_picture_url": "www.www.com",
+            "activated_vehicle": "235JFK4",
+            "owned_vehicles": [
+                {
+                    "plate": "235JFK4",
+                    "brand": "honda",
+                    "model": "civic",
+                    "color": "white",
+                    "year": "2008"
+                }
+            ]
+        }
+
         """
         # TODO this handler function should split into service and facebook gateway in lower level
         access_token = self.get_argument("access_token", False)
@@ -137,6 +153,7 @@ class FacebookGraphLoginHandler(BaseHandler, FacebookGraphMixin):
     @coroutine
     def post(self):
         """
+        /user/logout
         this function is to handle facebook token remove process with /auth/facebook?code={code}
 
         :raise: NotResultFound: database fetch result not found exception

@@ -4,3 +4,5 @@ config/secret.json
 .cache/
 .vagrant/
 *.pyc
+.DS_Store
+.idea/

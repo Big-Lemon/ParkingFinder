@@ -13,7 +13,8 @@ app = Application([
     (r'/auth/facebook', FacebookGraphLoginHandler),
     (r'/user/(.*)', UserInformationHandler),
     (r'/parkingSpace/reserve/(.*)', ParkingSpaceReserveHandler),
-    (r'/parkingSpace/nearby/(.*)', ParkingSpaceNearbyFetchHandler)
+    (r'/parkingSpace/nearby/(.*)', ParkingSpaceNearbyFetchHandler),
+    (r'/user/logout', FacebookGraphLoginHandler),
 ])
 
 """
@@ -58,14 +59,20 @@ app = Application([
         }
 
 ==============================================================================
-/auth/facebook?code={code}
+/auth/facebook?access_token
 
     GET
         - login through facebook oauth2
         return format:
         {
-            "access_token": "SADJFLKASDFN3240SZ9DJFLKSAKDFJ(*)u#rlk"
+            "access_token": {
+                "user_id": "123456"
+                "expires_at": 1231231231,
+                "issued_at": 1231231231,
+                "access_token": access_token
+            },
             "user": {
+                "user_id": "123456"
                 "first_name": "hong",
                 "last_name": "li",
                 "profile_picture_url": "www.xxx.sss/ssss"

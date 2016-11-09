@@ -1,3 +1,23 @@
+# -*- coding: utf-8 -*-
+"""User Service.
+
+This module contains all the service method related to user's information, which
+includes access_token, update/remove/modify user's information. update the vehicles
+owned by users
+
+Flow:
+    1. Inspect access token
+    2. Check existence of user
+    3. Register user if not exist
+    4. Register new vehicle
+    5. Activate Vehicles
+
+Todo:
+    * Move logic of inspecting access token from handler to UserService
+
+
+"""
+
 from sqlalchemy.orm.exc import NoResultFound
 from schematics.exceptions import ValidationError
 from tornado.gen import coroutine, Return
@@ -17,19 +37,20 @@ from clay import config
 logger = config.get_logger('user')
 
 
-# the correct flow is to 1.register user first then 2.register a car and finally 3.activate a car
-# to avoid code redundancy, there will be no condition implemented such that each step calls its previous step inside
 class UserService(object):
 
     @classmethod
     @coroutine
     def update_access_token(cls, access_token):
         """
-        update/create expiration date of access_token, and create
-        user if not exist, otherwise, return user's information
+        Update the expiration time of access token if it is already exist,
+        otherwise, create a new access_token. If the the owner of the access token
+        already has an account, return the user entity, otherwise throw UserNotFound
+        Exception to indicate the caller the user is first time login.
 
         :param AccessToken access_token:
         :return AccessToken:
+        :raises UserNotFound:
         """
         access_token.validate()
         token = yield AccessTokenRepository.upsert(
@@ -52,8 +73,11 @@ class UserService(object):
     @coroutine
     def register(user):
         """
-        Register a new user if not exist and register a vehicle for the user
-        this have checked if the car exist or not
+        Update user's activated vehicle if exist
+        create a new user otherwise.
+
+        TODO:
+            * Handler could directly call repository's upsert method since this is atom operation
 
         :param: User user:
         :raise: InvalidEntity: means the constructed entity is not consistent with its definition
@@ -72,12 +96,12 @@ class UserService(object):
     @coroutine
     def register_vehicle(user_id, vehicle):
         """
-        register a vehicle for the user and this have checked if the car exist or not
+        Link a new vehicle to the user.
 
-        :param String user_id:
-        :param Vehicle vehicle:
-        :raise: NotFound: requested value is not found in the database
-        :raise: InvalidEntity
+        :param String user_id: user's user id
+        :param Vehicle vehicle: vehicle object that contains all the information
+        :raise: NotFound: User doesn't exist in database
+        :raise: InvalidEntity: Vehicle entity contains invalid fields or missing fields
         :return: Vehicle vehicle: inserted vehicle
         """
 
@@ -107,9 +131,9 @@ class UserService(object):
         """
         Return the user information in detail with registered car information
 
-        :param String user_id:
-        :raise: NotFound : user detail cannot be found
-        :return: User user:
+        :param String user_id: user's id
+        :raise: NotFound : user doesn't exist
+        :return: User user: user entity contains detailed information and linked vehicles
         """
         try:
             user = yield UserRepository.read_one(user_id=user_id)
@@ -131,10 +155,10 @@ class UserService(object):
         an indicator since if its activated vehicle has been changed => activate successfully
         otherwise activation failure means call register function first
 
-        :param String user_id:
-        :param String vehicle_plate:
-        :raise: NotFound: user detail cannot be found
-        :return: updated user:
+        :param String user_id: user's id
+        :param String vehicle_plate: the plate of vehicle to be activated
+        :raise: NotFound: user doesn't exist
+        :return: User user: updated user entity
         """
         try:
             user = yield UserRepository.read_one(user_id)
