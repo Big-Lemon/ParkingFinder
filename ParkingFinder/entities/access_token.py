@@ -16,7 +16,7 @@ class AccessToken(Entity):
     issued_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
     expires_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
 
-    @classmethod
-    def is_expired(cls):
-        delta = datetime.utcnow() - cls.expires_at
+    @property
+    def is_expired(self):
+        delta = datetime.utcnow() - self.expires_at
         return delta.total_seconds() >= 0

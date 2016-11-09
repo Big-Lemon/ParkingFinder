@@ -7,15 +7,17 @@ from ParkingFinder.base.errors import (
     NotFound,
     InvalidEntity,
 )
-from ParkingFinder.services.user import UserService
-from ParkingFinder.mappers.user_mapper import UserMapper
-from ParkingFinder.handlers.handler import BaseHandler
-from ParkingFinder.entities.vehicle import Vehicle
+from ParkingFinder.base.validate_access_token import with_token_validation
 from ParkingFinder.entities.user import User
+from ParkingFinder.entities.vehicle import Vehicle
+from ParkingFinder.handlers.handler import BaseHandler
+from ParkingFinder.mappers.user_mapper import UserMapper
+from ParkingFinder.services.user import UserService
 
 
 class UserInformationHandler(BaseHandler):
 
+    @with_token_validation
     @coroutine
     def get(self, user_id):
         """
@@ -25,9 +27,6 @@ class UserInformationHandler(BaseHandler):
         :param String user_id:
         :return:
         """
-        access_token = self.get_argument('access_token', default=None)
-        # TODO: token validation
-
         try:
             assert user_id
             user = yield UserService.get_user_detail(
