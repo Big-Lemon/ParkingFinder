@@ -37,8 +37,8 @@ def with_session(method):
     def wrapper(*args, **params):
         _session = Session()
         try:
-            yield method(session=_session, *args, **params)
-            session.commit()
+            result = yield method(session=_session, *args, **params)
+            raise Return(result)
         except Return:
             session.commit()
             raise

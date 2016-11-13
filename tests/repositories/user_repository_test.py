@@ -27,7 +27,9 @@ def test_read_one_with_no_result():
 
 @pytest.mark.gen_test
 def test_upsert():
-    mocked_user = User.get_mock_object()
+    mocked_user = User.get_mock_object(overrides={
+        "activated_vehicle": None
+    })
 
     user = yield module.UserRepository.upsert(user=mocked_user)
     _user = yield module.UserRepository.read_one(user_id=mocked_user.user_id)

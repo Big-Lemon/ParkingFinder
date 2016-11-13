@@ -8,13 +8,13 @@ from schematics.types import (
 from ParkingFinder.entities.entity import Entity
 
 
-class ParkingSpace(Entity):
+class WaitingUser(Entity):
     """
-    Parking Space Entity
-    
+    Waiting User Entity
+
     """
     # required variables
-    plate = StringType(min_length=1, max_length=7, required=True)
+    user_id = StringType(min_length=1, max_length=64, required=True)
     latitude = FloatType(required=True)
     longitude = FloatType(required=True)
     created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
@@ -22,3 +22,4 @@ class ParkingSpace(Entity):
     # non-required variables
     level = IntType(required=False)
     description = StringType(min_length=1, max_length=500, required=False)
+
