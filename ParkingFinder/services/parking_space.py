@@ -26,6 +26,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
 
 from ParkingFinder.base.errors import BaseError, NotFound
+from ParkingFinder.base.with_repeat import Timeout, ReachRepeatLimit
 from ParkingFinder.base.with_repeat import with_repeat
 from ParkingFinder.repositories import (
     AvailableParkingSpacePool,
@@ -37,11 +38,23 @@ from ParkingFinder.services.real_time_location_service import RealTimeLocationSe
 
 logger = config.get_logger('service.parking_space')
 
+awaiting_matching_time_out = config.get('matching.matching_timeout')
+awaiting_matching_duration = config.get('matching.matching_duration')
+awaiting_matching_repeat_times = config.get('matching.matching_repeat_times')
+awaiting_action_time_out = config.get('matching.awaiting_action_timeout')
+awaiting_action_duration = config.get('matching.awaiting_action_duration')
+awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_times')
+
 
 class ParkingSpaceService(object):
 
     @classmethod
-    @with_repeat(repeat_exceptions=AwaitingMatching, timeout=300, duration=5)
+    @with_repeat(
+        repeat_exceptions=AwaitingMatching,
+        repeat_times=awaiting_matching_repeat_times,
+        timeout=awaiting_matching_time_out,
+        duration=awaiting_matching_duration,
+    )
     @coroutine
     def post_parking_space(cls, plate):
         """
@@ -72,8 +85,13 @@ class ParkingSpaceService(object):
             except NoResultFound:
                 raise NotFound
 
-        real_time_location = yield cls._handle_matching_status(parking_space)
-        raise Return(real_time_location)
+        try:
+            real_time_location = yield cls._handle_matching_status(
+                parking_space=parking_space
+            )
+            raise Return(real_time_location)
+        except (Timeout, ReachRepeatLimit):
+            raise Return(None)
 
     @classmethod
     @coroutine
@@ -96,7 +114,12 @@ class ParkingSpaceService(object):
         raise Return(available_parking_space)
 
     @classmethod
-    @with_repeat(repeat_exceptions=AwaitingAction, timeout=20, duration=1)
+    @with_repeat(
+        repeat_exceptions=AwaitingAction,
+        timeout=awaiting_action_time_out,
+        repeat_times=awaiting_action_repeat_times,
+        duration=awaiting_action_duration,
+    )
     @coroutine
     def _handle_matching_status(cls, parking_space):
         """
@@ -109,6 +132,7 @@ class ParkingSpaceService(object):
         :return RealTimeLocation: The user accept the parking space and the real time
             location service is established
         :raises Timeout: user is
+        :raises AwaitingMatching: No available user in the pool
         """
         try:
             matched_parking_space = (
@@ -131,7 +155,7 @@ class ParkingSpaceService(object):
                     )
                     raise Return(real_time_location)
 
-                if matched_parking_space.is_rejected:
+                if matched_parking_space.is_rejected or matched_parking_space.is_expired:
                     # match parking with users in waiting pool
                     raise NoResultFound
 

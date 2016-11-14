@@ -1,4 +1,7 @@
 from access_token import AccessToken
+from matched_parking_space import MatchedParkingSpace
 from parking_space import ParkingSpace
+from posted_parking_space import PostedParkingSpace
+from real_time_location import RealTimeLocation
 from user import User
 from vehicle import Vehicle

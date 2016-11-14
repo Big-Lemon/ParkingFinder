@@ -9,5 +9,11 @@
 		"username": "root",
 		"password": "development",
 		"database": "dev"
+	},
+	"matching": {
+		"matching_duration": 5,
+		"matching_repeat_count": 10,
+		"awaiting_action_timeout": 15,
+		"awaiting_action_duration": 1
 	}
 }

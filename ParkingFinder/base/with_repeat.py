@@ -45,7 +45,7 @@ def with_repeat(timeout=None, repeat_times=None, repeat_exceptions=None, duratio
 
                 # max repeat constraint
                 if _repeat_times != None and _repeat_times <= 0:
-                    raise ReachRepeatLimit(exception=exception)
+                    raise Timeout(exception=exception)
 
                 if _repeat_times:
                     _repeat_times -= 1
