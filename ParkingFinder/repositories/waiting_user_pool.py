@@ -1,7 +1,7 @@
 from tornado.gen import coroutine
 
 
-class WaitingPool(object):
+class WaitingUserPool(object):
 
     @coroutine
     def read_one(self, user_id):

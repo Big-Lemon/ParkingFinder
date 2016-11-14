@@ -4,4 +4,4 @@ from .access_token_repository import AccessTokenRepository
 from .parking_lot import ParkingLotRepository
 from .user_repository import UserRepository
 from .vehicle_repository import VehicleRepository
-from .waiting_pool import WaitingPool
+from .waiting_user_pool import WaitingUserPool

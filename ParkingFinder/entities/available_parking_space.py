@@ -8,7 +8,7 @@ from ParkingFinder.entities.entity import Entity
 from ParkingFinder.entities.parking_space import ParkingSpace
 
 
-class PostedParkingSpace(Entity):
+class AvailableParkingSpace(Entity):
     """
     Parking Space Entity with posting status
 
