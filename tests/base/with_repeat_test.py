@@ -42,7 +42,7 @@ def test_with_repeat_with_repeat_times(test_with_repeat):
     expect(TestWithRepeat).assert_false.exactly(3).times.and_raise(AssertionError)
     expect(module).sleep.never()
 
-    with pytest.raises(module.ReachRepeatLimit):
+    with pytest.raises(module.Timeout):
         method = test_with_repeat(repeat_times=3, repeat_exceptions=AssertionError)
         yield method()
 
@@ -62,6 +62,6 @@ def test_with_repeat_with_duration(test_with_repeat):
     expect(TestWithRepeat).assert_false.exactly(3).times.and_raise(AssertionError)
     expect(module).sleep.with_args(duration=1).exactly(3).and_return_future(None)
 
-    with pytest.raises(module.ReachRepeatLimit):
+    with pytest.raises(module.Timeout):
         method = test_with_repeat(duration=1, repeat_times=3, repeat_exceptions=AssertionError)
         yield method()

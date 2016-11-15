@@ -1,3 +1,4 @@
+from datetime import datetime
 from schematics.types import (
     StringType,
     FloatType,
@@ -17,7 +18,7 @@ class ParkingSpace(Entity):
     plate = StringType(min_length=1, max_length=7, required=True)
     latitude = FloatType(required=True)
     longitude = FloatType(required=True)
-    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
+    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f', default=datetime.utcnow)
 
     # non-required variables
     level = IntType(required=False)

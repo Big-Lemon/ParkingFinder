@@ -23,16 +23,18 @@ Todo:
 
 from clay import config
 from sqlalchemy.orm.exc import NoResultFound
-from tornado.gen import coroutine, Return
+from tornado.gen import coroutine, Return, sleep
 
 from ParkingFinder.base.errors import BaseError, NotFound
-from ParkingFinder.base.with_repeat import Timeout, ReachRepeatLimit
+from ParkingFinder.base.with_repeat import Timeout
 from ParkingFinder.base.with_repeat import with_repeat
+from ParkingFinder.entities.matched_parking_space import MatchedParkingSpace
+from ParkingFinder.entities.available_parking_space import AvailableParkingSpace
 from ParkingFinder.repositories import (
     AvailableParkingSpacePool,
     MatchedParkingList,
     ParkingLotRepository,
-    WaitingPool,
+    WaitingUserPool,
 )
 from ParkingFinder.services.real_time_location_service import RealTimeLocationService
 
@@ -44,6 +46,14 @@ awaiting_matching_repeat_times = config.get('matching.matching_repeat_times')
 awaiting_action_time_out = config.get('matching.awaiting_action_timeout')
 awaiting_action_duration = config.get('matching.awaiting_action_duration')
 awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_times')
+
+
+class AwaitingAction(BaseError):
+    error = "Awaiting Action"
+
+
+class AwaitingMatching(BaseError):
+    error = 'Awaiting Matching'
 
 
 class ParkingSpaceService(object):
@@ -77,11 +87,6 @@ class ParkingSpaceService(object):
         except NoResultFound:
             try:
                 parking_space = yield cls._post_new_parking_space(plate=plate)
-                matched_parking = yield cls._matching_waiting_user(
-                    posted_parking_space=parking_space
-                )
-                if not matched_parking:
-                    raise AwaitingMatching
             except NoResultFound:
                 raise NotFound
 
@@ -90,8 +95,11 @@ class ParkingSpaceService(object):
                 parking_space=parking_space
             )
             raise Return(real_time_location)
-        except (Timeout, ReachRepeatLimit):
-            raise Return(None)
+        except Timeout:
+            # simply ignore timeout exception of _handle_matching_status and get into
+            # next round, the _handle_matching_status will remove the entry if
+            # expired and matches a new waiting user
+            raise AwaitingMatching
 
     @classmethod
     @coroutine
@@ -108,8 +116,10 @@ class ParkingSpaceService(object):
         parking_space = yield ParkingLotRepository.read_one(plate=plate)
 
         available_parking_space = yield AvailableParkingSpacePool.insert(
-            parking_space,
-            is_active=False
+            available_parking_space=AvailableParkingSpace({
+                'parking_space': parking_space,
+                'is_active': False
+            })
         )
         raise Return(available_parking_space)
 
@@ -138,26 +148,35 @@ class ParkingSpaceService(object):
             matched_parking_space = (
                 yield MatchedParkingList.read_one(plate=parking_space.plate)
             )
-            if matched_parking_space.is_awaiting:
-                # still waiting user's action
-                raise AwaitingAction
-            else:
+
+            # if expired, wait for a second to avoid race condition.
+            if matched_parking_space.is_time_expired:
+                sleep(1)
+                matched_parking_space = (
+                    yield MatchedParkingList.read_one(plate=parking_space.plate)
+                )
+
+            # if the race condition is occurred, the other side mark
+            # the matched record as reserved after time expired, it will
+            # be seen as a valid reservation.
+            if matched_parking_space.is_reserved:
                 # The record should be removed no matter what decision user have made
                 yield MatchedParkingList.remove(plate=matched_parking_space.plate)
+                # user reserved the parking, the method will not remove itself from
+                # available parking space pool at this point because the waiting user
+                # might check in other parking space during the route
+                # the clean up step should be at checkout step
+                real_time_location = yield RealTimeLocationService.fetch_real_time_location(
+                    plate=matched_parking_space
+                )
+                raise Return(real_time_location)
 
-                if matched_parking_space.is_reserved:
-                    # user reserved the parking, the method will not remove itself from
-                    # available parking space pool at this point because the waiting user
-                    # might check in other parking space during the route
-                    # the clean up step should be at checkout step
-                    real_time_location = yield RealTimeLocationService.fetch_real_time_location(
-                        plate=matched_parking_space
-                    )
-                    raise Return(real_time_location)
-
-                if matched_parking_space.is_rejected or matched_parking_space.is_expired:
-                    # match parking with users in waiting pool
-                    raise NoResultFound
+            elif matched_parking_space.is_awaiting:
+                # still waiting user's action
+                raise AwaitingAction
+            elif matched_parking_space.is_expired or matched_parking_space.is_rejected:
+                yield MatchedParkingList.remove(plate=parking_space.plate)
+                raise NoResultFound
 
         except NoResultFound:
             # this is happened because the waiting user has check into another parking spaces
@@ -174,7 +193,7 @@ class ParkingSpaceService(object):
     @coroutine
     def _matching_waiting_user(cls, posted_parking_space):
         """
-        Match a waiting user with given parking space, if the WaitingPool is empty,
+        Match a waiting user with given parking space, if the WaitingUserPool is empty,
         the parking space will mark as active in order to be matched when new
         waiting user is available
 
@@ -182,7 +201,7 @@ class ParkingSpaceService(object):
         :return MatchedParkingSpace: entity that holds both parking space and its matched user
         :return None: No waiting user found in the pool
         """
-        waiting_user = yield WaitingPool.pop_one(
+        waiting_user = yield WaitingUserPool.pop_one(
             longitude=posted_parking_space.longitude,
             latitude=posted_parking_space.latitude,
             location=posted_parking_space.location
@@ -212,14 +231,7 @@ class ParkingSpaceService(object):
         :param WaitingUser waiting_user:
         :return MatchedParkingSpace: The entity that contains both AvailableParkingSpace and WaitingUser
         """
-        return False
-
-
-class AwaitingAction(BaseError):
-    pass
-
-
-class AwaitingMatching(BaseError):
-    pass
-
-
+        return MatchedParkingSpace({
+            'parking_space': parking_space.plate,
+            'waiting_user': waiting_user.user_id,
+        })

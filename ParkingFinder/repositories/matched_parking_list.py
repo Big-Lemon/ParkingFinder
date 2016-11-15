@@ -3,8 +3,9 @@ from tornado.gen import coroutine
 
 class MatchedParkingList(object):
 
+    @classmethod
     @coroutine
-    def read_one(self, plate):
+    def read_one(cls, plate):
         """
         Read one by plate
 
@@ -14,8 +15,9 @@ class MatchedParkingList(object):
         """
         pass
 
+    @classmethod
     @coroutine
-    def read_many(self, user_id):
+    def read_many(cls, user_id):
         """
         Read many by user id
 
@@ -34,8 +36,9 @@ class MatchedParkingList(object):
         """
         pass
 
+    @classmethod
     @coroutine
-    def remove(self, plate):
+    def remove(cls, plate):
         """
         Remove a matched Parking Space from the list
 

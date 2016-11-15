@@ -7,7 +7,6 @@ from schematics.types import (
     IntType,
     DateTimeType,
 )
-from schematics.types.compound import ModelType
 
 from ParkingFinder.entities.entity import Entity
 from ParkingFinder.entities.parking_space import ParkingSpace
@@ -20,13 +19,13 @@ class MatchedParkingSpace(Entity):
 
     """
     # required variables
-    parking_space = ModelType(model_class=ParkingSpace)
-    waiting_user = ModelType(model_class=WaitingUser)
+    plate = StringType(min_length=1, max_length=7, required=True)
+    user_id = StringType(min_length=1, max_length=64, required=True)
     status = StringType(
         required=True,
         default='awaiting',
         choices=['awaiting', 'rejected', 'accepted', 'expired'])
-    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
+    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f', default=datetime.utcnow)
 
     @property
     def is_accepted(self):
@@ -48,3 +47,9 @@ class MatchedParkingSpace(Entity):
         else:
             current = datetime.utcnow()
             return self.created_at + config.get('matching.awaiting_action_timeout') < current
+
+    @property
+    def is_time_expired(self):
+        current = datetime.utcnow()
+        return self.created_at + config.get('matching.awaiting_action_timeout') < current
+

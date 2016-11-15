@@ -26,7 +26,6 @@ def with_repeat(timeout=None, repeat_times=None, repeat_exceptions=None, duratio
 
     def decorator(method):
 
-        @functools.wraps(method)
         @coroutine
         def wrapper(*args, **params):
 
@@ -60,7 +59,7 @@ def with_repeat(timeout=None, repeat_times=None, repeat_exceptions=None, duratio
                     raise
                 except repeat_exceptions as ex:
                     exception = ex
-                except Exception:
+                except Exception as e:
                     raise
 
         return wrapper
@@ -73,10 +72,3 @@ class Timeout(BaseError):
     Timeout Exception
     """
     error = "Timeout Exception"
-
-
-class ReachRepeatLimit(BaseError):
-    """
-    Timeout Exception
-    """
-    error = "Reach Repeat Limit"

@@ -1,10 +1,11 @@
-from tornado.gen import coroutine
+from tornado.gen import coroutine, Return
 
 
 class ParkingLotRepository(object):
 
+    @classmethod
     @coroutine
-    def read_one(self, plate):
+    def read_one(cls, plate):
         """
         Read one by plate
 
@@ -12,31 +13,34 @@ class ParkingLotRepository(object):
         :return:
         :raises noResultFound: vehicle with given plate is not in the parking lot
         """
-        pass
+        raise Return()
 
+    @classmethod
     @coroutine
-    def read_many(self):
+    def read_many(cls):
         """
         Read many by user_id
 
         :return:
         """
-        pass
+        raise NotImplemented
 
+    @classmethod
     @coroutine
-    def insert(self, parking_space):
+    def insert(cls, parking_space):
         """
         Insert a parking space to the parking lot
 
         :return ParkingSpace:
         """
-        pass
+        raise NotImplemented
 
+    @classmethod
     @coroutine
-    def remove(self, plate):
+    def remove(cls, plate):
         """
         Remove a parking space by the plate from parking lot
 
         :return:
         """
-        pass
+        raise NotImplemented

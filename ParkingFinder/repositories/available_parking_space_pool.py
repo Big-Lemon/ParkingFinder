@@ -1,10 +1,11 @@
-from tornado.gen import coroutine
+from tornado.gen import coroutine, Return
 
 
 class AvailableParkingSpacePool(object):
 
+    @staticmethod
     @coroutine
-    def read_one(self, plate):
+    def read_one(plate):
         """
         Read one parking space by plate
 
@@ -12,7 +13,7 @@ class AvailableParkingSpacePool(object):
         :return AvailableParkingSpace:
         :raises NoResultFound: the vehicle with given plate hasn't been posted yet
         """
-        pass
+        raise Return()
 
     @staticmethod
     @coroutine
@@ -34,8 +35,9 @@ class AvailableParkingSpacePool(object):
         assert (longitude and latitude) or location
         pass
 
+    @classmethod
     @coroutine
-    def insert(self, available_parking_space):
+    def insert(cls, available_parking_space):
         """
         Insert a new available parking space into pool
 
@@ -44,8 +46,9 @@ class AvailableParkingSpacePool(object):
         """
         pass
 
+    @classmethod
     @coroutine
-    def update(self, plate, is_active):
+    def update(cls, plate, is_active):
         """
         Update 'is_active' column of a parking space with given plate
         :param str plate:
@@ -54,8 +57,9 @@ class AvailableParkingSpacePool(object):
         """
         pass
 
+    @classmethod
     @coroutine
-    def remove(self, plate):
+    def remove(cls, plate):
         """
         Remove a available parking space by plate
         :param str plate:
@@ -63,8 +67,9 @@ class AvailableParkingSpacePool(object):
         """
         pass
 
+    @classmethod
     @coroutine
-    def pop_many(self, longitude, latitude, location, _filter=None):
+    def pop_many(cls, longitude, latitude, location, _filter=None):
         """
         This method will find (#) of parking spaces within certain (*range)
         that can be passed by '_filter'
