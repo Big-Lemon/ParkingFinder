@@ -20,8 +20,8 @@ class MatchedParkingSpace(Entity):
 
     """
     # required variables
-    parking_space = ModelType(model_class=ParkingSpace)
-    waiting_user = ModelType(model_class=WaitingUser)
+    plate = StringType(min_length=1, max_length=7, required=True)
+    user_id = StringType(min_length=1, max_length=64, required=True)
     status = StringType(
         required=True,
         default='awaiting',

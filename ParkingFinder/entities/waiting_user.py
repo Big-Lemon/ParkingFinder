@@ -3,6 +3,7 @@ from schematics.types import (
     FloatType,
     IntType,
     DateTimeType,
+    BooleanType,
 )
 
 from ParkingFinder.entities.entity import Entity
@@ -18,6 +19,7 @@ class WaitingUser(Entity):
     latitude = FloatType(required=True)
     longitude = FloatType(required=True)
     created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
+    is_active = BooleanType(required=True, default=False)
 
     # non-required variables
     level = IntType(required=False)

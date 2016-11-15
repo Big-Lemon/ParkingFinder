@@ -1,6 +1,7 @@
 from schematics.types import (
     BooleanType,
     DateTimeType,
+    StringType,
 )
 from schematics.types.compound import ModelType
 
@@ -15,7 +16,7 @@ class AvailableParkingSpace(Entity):
     """
     # required variables
 
-    parking_space = ModelType(model_class=ParkingSpace, required=True)
+    plate = StringType(min_length=1, max_length=7, required=True)
     is_active = BooleanType(required=True, default=False)
     created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
     updated_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')

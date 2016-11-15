@@ -17,10 +17,23 @@ class MatchedParkingList(object):
     @coroutine
     def read_many(self, user_id):
         """
-        Read many by user id
+        Read many and only return list<MatchedParkingSpace> such that every
+        MatchedParkingSpace inside with status "waiting"
 
         :param str user_id:
+        :raise: NoResultFound:
         :return list<MatchedParkingSpace>:
+        """
+        pass
+
+    @coroutine
+    def update(self, user_id, plate, status):
+        """
+        Update status column of a matched_result with given combination of user_id and plate
+        :param str user_id:
+        :param str plate:
+        :param string status:
+
         """
         pass
 
