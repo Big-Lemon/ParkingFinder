@@ -3,7 +3,7 @@ from tornado.web import Application
 from ParkingFinder.handlers import HealthHandler
 from ParkingFinder.handlers import FacebookGraphLoginHandler
 from ParkingFinder.handlers.user_information import UserInformationHandler
-from ParkingFinder.handlers.parking_space import (
+from ParkingFinder.handlers.near_by_checking import (
     ParkingSpaceNearbyFetchHandler,
     ParkingSpaceReserveHandler
 )

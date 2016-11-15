@@ -27,9 +27,12 @@ class AvailableParkingSpacePool(object):
         the 'coordinate' or in location
         (*range) is defined in config file ('matching_algorithm.range')
 
+        *****return only active ones******
+
         :param float longitude:
         :param float latitude:
         :param str location:
+        :raises NoResultFound: no active parking space available for certain range
         :return List<AvailableParkingSpace>:
         """
         assert (longitude and latitude) or location

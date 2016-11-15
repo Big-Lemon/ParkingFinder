@@ -10,18 +10,19 @@ class ParkingLotRepository(object):
         Read one by plate
 
         :param str plate:
-        :return:
+        :return: <ParkingSpace>:
         :raises noResultFound: vehicle with given plate is not in the parking lot
         """
         raise Return()
 
     @classmethod
     @coroutine
-    def read_many(cls):
+    def read_many(cls, plates):
         """
-        Read many by user_id
-
-        :return:
+        Read many by a list of plates
+        :param plates: list<plates>
+        :raises noResultFound: vehicle with given plate is not in the parking lot
+        :return: list<ParkingSpace>
         """
         raise NotImplemented
 

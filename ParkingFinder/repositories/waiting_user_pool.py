@@ -8,7 +8,7 @@ class WaitingUserPool(object):
         """
         Return a waiting user by user_id
         :param user_id:
-        :return:
+        :return: WaitingUser
         :raise NoResultFound: user is not in the pool
         """
         pass
@@ -48,7 +48,13 @@ class WaitingUserPool(object):
         pass
 
     @coroutine
-    def remove(self):
+    def remove(self, user_id):
+        """
+        remove a user row from a user waitting pool
+        :param user_id:
+        :return:
+        """
+
         pass
 
     @coroutine
