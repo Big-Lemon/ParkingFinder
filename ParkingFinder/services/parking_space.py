@@ -75,7 +75,6 @@ class ParkingSpaceService(object):
         :param str plate: plate of the vehicle in the parking space
         :return RealTimeLocation: real time token with location of the matched waiting user
         :raises Timeout: timeout, user can send post request again to continue listening the status
-        :raises AssertionError: the vehicle doesn't belong to the user with user_id
         :raises NotFound: the vehicle with given plate have not been checked in yet
         """
 
@@ -110,14 +109,13 @@ class ParkingSpaceService(object):
 
         :param plate:
         :return AvailableParkingSpace:
-        :raises AssertionError: The vehicle doesn't belong to the user with given user_id
         :raises NoResultFound: The vehicle with given plate have not been checked in yet
         """
         parking_space = yield ParkingLotRepository.read_one(plate=plate)
 
         available_parking_space = yield AvailableParkingSpacePool.insert(
             available_parking_space=AvailableParkingSpace({
-                'parking_space': parking_space,
+                'plate': parking_space.plate,
                 'is_active': False
             })
         )

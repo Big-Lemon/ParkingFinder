@@ -14,3 +14,8 @@ class RealTimeLocationService(object):
         :return:
         """
         pass
+
+    @classmethod
+    @coroutine
+    def terminate_real_time_location(cls, token):
+        pass

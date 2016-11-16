@@ -11,7 +11,7 @@ def test_post_parking_space_with_active_available_parking():
     _plate = "1234567"
     _parking_space = ParkingSpace.get_mock_object(overrides={'plate': _plate})
     _posted_parking_space = AvailableParkingSpace.get_mock_object(
-        overrides={'parking_space': _parking_space, 'is_active': True}
+        overrides={'plate': _plate, 'is_active': True}
     )
     expect(module.AvailableParkingSpacePool).read_one(plate=_plate).and_return_future(_posted_parking_space)
 
@@ -29,7 +29,7 @@ def test_post_parking_space_with_matching_timeout():
     _plate = "1234567"
     _parking_space = ParkingSpace.get_mock_object(overrides={'plate': _plate})
     _posted_parking_space = AvailableParkingSpace.get_mock_object(
-        overrides={'parking_space': _parking_space, 'is_active': False}
+        overrides={'plate': _plate, 'is_active': False}
     )
     expect(module.AvailableParkingSpacePool).read_one(plate=_plate).and_return_future(_posted_parking_space)
 
@@ -51,7 +51,7 @@ def test_post_parking_space_with_untrustworthy_waiting_user():
     _plate = "1234567"
     _parking_space = ParkingSpace.get_mock_object(overrides={'plate': _plate})
     _posted_parking_space = AvailableParkingSpace.get_mock_object(
-        overrides={'parking_space': _parking_space, 'is_active': False}
+        overrides={'plate': _plate, 'is_active': False}
     )
 
     expect(module.AvailableParkingSpacePool).read_one(
@@ -73,7 +73,7 @@ def test_post_parking_space_with_post_new_parking_space():
     _plate = "1234567"
     _parking_space = ParkingSpace.get_mock_object(overrides={'plate': _plate})
     _posted_parking_space = AvailableParkingSpace.get_mock_object(
-        overrides={'parking_space': _parking_space, 'is_active': False}
+        overrides={'plate': _plate, 'is_active': False}
     )
     _real_time_location = RealTimeLocation.get_mock_object()
 
@@ -101,7 +101,7 @@ def test_post_parking_space_with_posting_invalid_plate():
     _plate = "1234567"
     _parking_space = ParkingSpace.get_mock_object(overrides={'plate': _plate})
     _posted_parking_space = AvailableParkingSpace.get_mock_object(
-        overrides={'parking_space': _parking_space, 'is_active': False}
+        overrides={'plate': _plate, 'is_active': False}
     )
     _real_time_location = RealTimeLocation.get_mock_object()
 
@@ -133,7 +133,7 @@ def test_post_new_parking_space():
             'plate': _plate
         })
     _available_parking_space = AvailableParkingSpace.get_mock_object({
-        'parking_space': _parking_space,
+        'plate': _plate,
         'is_active': False
     })
     expect(module.ParkingLotRepository).read_one(
@@ -161,7 +161,7 @@ def test_post_new_parking_space():
             'plate': _plate
         })
     _available_parking_space = AvailableParkingSpace.get_mock_object({
-        'parking_space': _parking_space,
+        'plate': _plate,
         'is_active': False
     })
     expect(module.ParkingLotRepository).read_one(
@@ -189,7 +189,7 @@ def test_post_new_parking_space_with_not_found_in_parking_lot():
             'plate': _plate
         })
     _available_parking_space = AvailableParkingSpace.get_mock_object({
-        'parking_space': _parking_space,
+        'plate': _plate,
         'is_active': False
     })
     expect(module.ParkingLotRepository).read_one(
@@ -348,6 +348,7 @@ def test_handle_matching_status_with_rejected_status():
     _matched_parking_space = MatchedParkingSpace.get_mock_object(overrides={
         'plate': _plate,
         'status': 'rejected',
+        'created_at': datetime.datetime.utcnow()
     })
 
     expect(module.MatchedParkingList).read_one(

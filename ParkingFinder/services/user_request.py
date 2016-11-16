@@ -302,7 +302,6 @@ class UserRequestService(object):
         if not removed:
             raise InvalidEntity
 
-
 class NoResultFoundInMatchedSpaceTable(BaseError):
     pass
 
