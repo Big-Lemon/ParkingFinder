@@ -8,7 +8,6 @@ from ParkingFinder.base.errors import (
     InvalidEntity,
 )
 from ParkingFinder.base.validate_access_token import with_token_validation
-from ParkingFinder.entities.user import User
 from ParkingFinder.entities.vehicle import Vehicle
 from ParkingFinder.handlers.handler import BaseHandler
 from ParkingFinder.mappers.user_mapper import UserMapper
@@ -48,6 +47,7 @@ class UserInformationHandler(BaseHandler):
                 'error': "BAD REQUEST Invalid User Id"
             })
 
+    @with_token_validation
     @coroutine
     def post(self, user_id):
         """
@@ -70,9 +70,6 @@ class UserInformationHandler(BaseHandler):
         :param String user_id:
         :return:
         """
-        # set to default to avoid missingArgumentException
-        access_token = self.get_argument(name='access_token', default=None)
-        # TODO: token validation
         try:
             assert user_id
             user = yield UserService.get_user_detail(

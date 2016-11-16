@@ -16,10 +16,10 @@ app = Application([
     (r'/health', HealthHandler),
     (r'/auth/facebook', FacebookGraphLoginHandler),
     (r'/user/(.*)', UserInformationHandler),
+    (r'/user/logout', FacebookGraphLoginHandler),
     (r'/parkingSpace/reserve/(.*)', ReserveParkingSpaceHandler),
     (r'/parkingSpace/reject/(.*)', RejectParkingSpaceHandler),
     (r'/parkingSpace/nearby/(.*)', ParkingSpaceNearbyFetchHandler),
-    (r'/user/logout', FacebookGraphLoginHandler),
     (r'/parkingSpace/post/(.*)', PostParkingSpaceHandler),
 ])
 
