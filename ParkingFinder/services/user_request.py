@@ -23,6 +23,10 @@ awaiting_action_time_out = config.get('matching.awaiting_action_timeout')
 awaiting_action_duration = config.get('matching.awaiting_action_duration')
 awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_times')
 
+# now available_parking_space has longi lati loc and plate return available_space_list enough
+# use pop_many instead of read_many
+# insert -> exception, read-> notFoundException, update-> # of rows affected,  remove -> none -> remove fail
+
 
 class UserRequestService(object):
 
@@ -36,26 +40,29 @@ class UserRequestService(object):
         :param: waiting_user: user entity
         :raise: Timeout: no space is available in a specific time so return timeout
         :raise UserTerminatedInTheHalfWay : means user terminates further service
-        :raise InvalidArguments: the user passed in is not valid
-        :return: List<ParkingSpace>
+        :raise InvalidEntity: the user passed in is not valid
+        :return: List<AvailableParkingSpace>
         """
+        # branch to handle fetching list of available spaces
         space_return = []
         try:
             user_info = yield WaitingUserPool.read_one(user_id=waiting_user.user_id)
-            space_return = []
             try:
                 space_return = yield cls._loop_checking_space_availability(waiting_user=waiting_user)
             except Timeout:
                 pass
         except NoResultFound:
-            inserted_user = yield WaitingUserPool.insert(waiting_user=waiting_user)
-            if not inserted_user:
-                raise InvalidArguments
+            try:
+                inserted_user = yield WaitingUserPool.insert(waiting_user=waiting_user)
+            except Exception:
+                # TODO: case to handle either AssertionError or validationError thrown from the insertion above
+                pass
             try:
                 space_return = yield cls._checking_space_availability(waiting_user=waiting_user)
             except Timeout:
                 pass
 
+        # branch to handle if user continue to use the service
         try:
             # case where user continue the service
             user_info = yield WaitingUserPool.read_one(user_id=waiting_user.user_id)
@@ -65,10 +72,10 @@ class UserRequestService(object):
         except NoResultFound:
             # case where user stop the service
             for space in space_return:
-                modified = yield MatchedParkingList.update(user_id=waiting_user.user_id,
-                                                           plate=space.plate,
-                                                           status='rejected')
-                if not modified:
+                modified_row = yield MatchedParkingList.update(user_id=waiting_user.user_id,
+                                                               plate=space.plate,
+                                                               status='rejected')
+                if modified_row == 0:
                     raise InvalidEntity
             raise UserTerminatedInTheHalfWay
 
@@ -87,34 +94,42 @@ class UserRequestService(object):
         """
         user_id = waiting_user.user_id
         try:
-            list_of_matching_space = yield MatchedParkingList.read_many(user_id)
+            list_of_matching_space = yield MatchedParkingList.read_many(user_id=user_id)
             # loop to change the corresponding status in the table
             for matched_result in list_of_matching_space:
                 if accepted_space_plate != matched_result.plate:
-                    modified = yield MatchedParkingList.update(user_id=user_id,
-                                                               plate=matched_result.plate,
-                                                               status='rejected')
-                    if not modified:
+                    modified_row = yield MatchedParkingList.update(user_id=user_id,
+                                                                   plate=matched_result.plate,
+                                                                   status='rejected')
+                    if modified_row == 0:
                         raise InvalidEntity
                 elif matched_result.is_expired():
-                    modified = yield MatchedParkingList.update(usr_id=user_id,
-                                                               plate=matched_result.plate,
-                                                               status='expired')
-                    if not modified:
+                    modified_row = yield MatchedParkingList.update(usr_id=user_id,
+                                                                   plate=matched_result.plate,
+                                                                   status='expired')
+                    if modified_row == 0:
                         raise InvalidEntity
                     raise Timeout
                 else:
-                    modified= yield MatchedParkingList.update(user_id=user_id,
-                                                              plate=matched_result.plate,
-                                                              status='reserved')
-                    if not modified:
+                    modified_row = yield MatchedParkingList.update(user_id=user_id,
+                                                                   plate=matched_result.plate,
+                                                                   status='reserved')
+                    if modified_row == 0:
                         raise InvalidEntity
 
-            yield WaitingUserPool.remove(user_id=user_id)
-            real_time_location = yield RealTimeLocationService.fetch_real_time_location(
-                token=accepted_space_plate
-            )
-            raise Return(real_time_location)
+            removed = yield WaitingUserPool.remove(user_id=user_id)
+            # case where user is not valid so we should mark that space as reject
+            # and not return the token
+            if not removed:
+                modified_row = yield MatchedParkingList.update(user_id=user_id,
+                                                               plate=accepted_space_plate,
+                                                               status='rejected')
+                raise InvalidEntity
+            else:
+                real_time_location = yield RealTimeLocationService.fetch_real_time_location(
+                    token=accepted_space_plate
+                )
+                raise Return(real_time_location)
         except NoResultFound:
             raise Timeout
 
@@ -129,16 +144,16 @@ class UserRequestService(object):
         :raise UserTerminatedInTheHalfWay : means user terminates further service
         :raise InvalidEntity : this means information among tables is not consistent
                                 possibly internal error
-        :return: list<ParkingSpace>
+        :return: list<AvailableParkingSpace>
         """
 
         try:
             list_of_matching_space = yield MatchedParkingList.read_many(user_id=waiting_user.user_id)
             for matched_result in list_of_matching_space:
-                modified = yield MatchedParkingList.update(user_id=waiting_user.user_id,
-                                                           plate=matched_result.plate,
-                                                           status='rejected')
-                if not modified:
+                modified_row = yield MatchedParkingList.update(user_id=waiting_user.user_id,
+                                                               plate=matched_result.plate,
+                                                               status='rejected')
+                if modified_row == 0:
                     raise InvalidEntity
             # we also assume provide service first and then terminate if necessary to avoid inconsistency
         except NoResultFound:
@@ -159,30 +174,29 @@ class UserRequestService(object):
         except NoResultFound:
             # case where user stop the service
             for space in space_return:
-                modified = yield MatchedParkingList.update(user_id=waiting_user.user_id,
-                                                           plate=space.plate,
-                                                           status='rejected')
-                if not modified:
+                modified_row = yield MatchedParkingList.update(user_id=waiting_user.user_id,
+                                                               plate=space.plate,
+                                                               status='rejected')
+                if modified_row == 0:
                     raise InvalidEntity
             raise UserTerminatedInTheHalfWay
 
     @classmethod
     @coroutine
-    def fetching_space_nearby(cls, latitude, longitude):
+    def fetching_space_nearby(cls, latitude, longitude, location):
         """
         fetch the space that is near the location
         :param latitude:
         :param longitude:
         :raise NNoResultFound
-        :return: List<ParkingSpace>
+        :return: List<AvailableParkingSpace>
         """
         try:
+            # you can only use read_many here since you don't want change the status of the space in table
             list_of_available_space = yield AvailableParkingSpacePool.read_many(latitude=latitude,
-                                                                                longitude=longitude)
-            space_return = []
-            for available_space in list_of_available_space:
-                space = yield ParkingLotRepository.read_one(plate=available_space.plate)
-                space_return.append(space)
+                                                                                longitude=longitude,
+                                                                                location=location)
+            space_return = list_of_available_space
             raise Return(space_return)
         except NoResultFound:
             raise NoResultFound
@@ -205,15 +219,20 @@ class UserRequestService(object):
         :param WaitingUser waiting_user: this function only accept user that is
                                 marked as "active "in the user waiting pool
         :raise Timeout
-        :return: list<ParkingSpace>
+        :raise: InvalidEntity : this means information among tables is not consistent
+                                possibly internal error
+        :return: list<AvailableParkingSpace>
         """
         try:
             list_of_matched_space = yield MatchedParkingList.read_many(user_id=waiting_user.user_id)
             spaces_return = []
             for matching_space in list_of_matched_space:
                 if matching_space.is_awaiting():
-                    space = yield ParkingLotRepository.read_one(plate=matching_space.plate)
-                    spaces_return.append(space)
+                    try:
+                        space = yield AvailableParkingSpacePool.read_one(plate=matching_space.plate)
+                        spaces_return.append(space)
+                    except NoResultFound:
+                        raise InvalidEntity
             if not spaces_return:
                 raise NoResultFoundInMatchedSpaceTable
             else:
@@ -238,37 +257,32 @@ class UserRequestService(object):
         :raise Timeout
         :raise InvalidEntity : this means information among tables is not consistent
                                 possibly internal error
-        :return: list<ParkingSpace>
+        :return: list<AvailableParkingSpace>
         """
         # TODO: read_many API might change based on how the location value stored in each entity 
         # TODO: so parameter might change accordingly
         try:
-            list_of_available_space = yield AvailableParkingSpacePool.read_many(latitude=waiting_user.latitude,
-                                                                                longitude=waiting_user.longitude)
-            spaces_return = []
+            list_of_available_space = yield AvailableParkingSpacePool.pop_many(latitude=waiting_user.latitude,
+                                                                               longitude=waiting_user.longitude,
+                                                                               location=waiting_user.location)
+            spaces_return = list_of_available_space
             for space_element in list_of_available_space:
-                # mark user as inactive here
-                modified = yield AvailableParkingSpacePool.update(plate=space_element.plate,
-                                                                  is_active=False)
-                if not modified:
-                    raise InvalidEntity
                 # insert matched result in the Pre_reserved table and mark status as awaiting
-                space = yield ParkingLotRepository.read_one(plate=space_element.plate)
                 modified = yield MatchedParkingList.insert(
                     MatchedParkingSpace({
-                        'plate': space.plate,
+                        'plate': space_element.plate,
                         'user_id': waiting_user.user_id,
                         'status': 'awaiting',
                     })
                 )
-                if not modified:
-                    raise InvalidEntity
-                spaces_return.append(space)
             raise Return(spaces_return)
+        except Exception:
+            # TODO: case to handle either AssertionError or validationError thrown from the insertion above
+            pass
         except NoResultFound:
             # mark user as "active" here
-            modified =  yield WaitingUserPool.update(user_id=waiting_user.user_id, is_active=True)
-            if not modified:
+            modified_row = yield WaitingUserPool.update(user_id=waiting_user.user_id, is_active=True)
+            if modified_row == 0:
                 raise InvalidEntity
             spaces_return = yield cls._loop_checking_space_availability(waiting_user)
             raise Return(spaces_return)
@@ -279,12 +293,13 @@ class UserRequestService(object):
         """
         terminate the user service as requested
         :param WaitingUser waiting_user:
-        :raise InvalidEntity
+        :raise InvalidEntity: this means information among tables is not consistent
+                                possibly internal error
         :return:
         """
         # TODO: reminder: this is the only case request part can delete the user in user waiting pool
-        modified =  yield WaitingUserPool.remove(user_id=waiting_user.user_id)
-        if not modified:
+        removed = yield WaitingUserPool.remove(user_id=waiting_user.user_id)
+        if not removed:
             raise InvalidEntity
 
 

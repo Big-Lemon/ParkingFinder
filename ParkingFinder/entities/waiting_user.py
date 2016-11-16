@@ -18,6 +18,7 @@ class WaitingUser(Entity):
     user_id = StringType(min_length=1, max_length=64, required=True)
     latitude = FloatType(required=True)
     longitude = FloatType(required=True)
+    location = StringType(max_length=255, required=False)
     created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
     is_active = BooleanType(required=True, default=False)
 

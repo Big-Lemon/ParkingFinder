@@ -78,6 +78,8 @@ class AvailableParkingSpacePool(object):
         that can be passed by '_filter'
         (#) is defined in config ('matching_algorithm.nParkingReturn')
         (*range) is defined in config ('matching_algorithm.range')
+        part of differences between this one and read many is that this one will
+        update the status as inactive as they are fetched out
 
         :param float longitude:
         :param float latitude:
