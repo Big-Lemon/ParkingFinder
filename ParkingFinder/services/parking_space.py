@@ -151,7 +151,7 @@ class ParkingSpaceService(object):
 
             # if expired, wait for a second to avoid race condition.
             if matched_parking_space.is_time_expired:
-                sleep(1)
+                yield sleep(1)
                 matched_parking_space = (
                     yield MatchedParkingList.read_one(plate=parking_space.plate)
                 )
@@ -167,7 +167,7 @@ class ParkingSpaceService(object):
                 # might check in other parking space during the route
                 # the clean up step should be at checkout step
                 real_time_location = yield RealTimeLocationService.fetch_real_time_location(
-                    plate=matched_parking_space
+                    plate=matched_parking_space.plate
                 )
                 raise Return(real_time_location)
 

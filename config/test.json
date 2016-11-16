@@ -10,5 +10,8 @@
     "matching": {
         "matching_repeat_times": 2,
         "awaiting_action_repeat_times": 2
+    },
+    "posted_parking": {
+        "timeout": 15
     }
 }

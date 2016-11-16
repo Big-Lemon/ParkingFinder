@@ -247,27 +247,124 @@ def test_handle_matching_status_with_no_record_and_waiting_user():
 
 @pytest.mark.gen_test
 def test_handle_matching_status_with_time_expired():
-    pass
+    _plate = '1234567'
+    _parking_space = ParkingSpace.get_mock_object(overrides={
+        'plate': _plate
+    })
+    _matched_parking_space = MatchedParkingSpace.get_mock_object(overrides={
+        'plate': _plate,
+        'status': 'expired',
+        'created_at': datetime.datetime.utcnow() - datetime.timedelta(10)
+    })
+
+    expect(module.MatchedParkingList).read_one(
+        plate=_plate
+    ).and_return_future(_matched_parking_space)
+
+
+    expect(module).sleep(1).twice().and_return_future(None)
+
+    expect(module.MatchedParkingList).remove(
+        plate=_matched_parking_space.plate
+    ).twice().and_return_future(None)
+
+    expect(module.ParkingSpaceService)._matching_waiting_user(
+        posted_parking_space=_parking_space
+    ).and_return_future(_matched_parking_space)
+
+    with pytest.raises(module.Timeout):
+        yield module.ParkingSpaceService._handle_matching_status(
+            parking_space=_parking_space
+        )
 
 @pytest.mark.gen_test
 def test_handle_matching_status_with_time_expired_and_race_condition():
-    pass
+    _plate = '1234567'
+    _parking_space = ParkingSpace.get_mock_object(overrides={
+        'plate': _plate
+    })
+    _matched_parking_space = MatchedParkingSpace.get_mock_object(overrides={
+        'plate': _plate
+    })
+    _real_time_location = RealTimeLocation.get_mock_object(overrides={
+        'token': _matched_parking_space.plate
+    })
+
+    expect(module.MatchedParkingList).read_one(
+        plate=_plate
+    ).and_return_future(_matched_parking_space)
+    expect(module.MatchedParkingSpace).is_time_expired.and_return(True)
+    expect(module.MatchedParkingSpace).is_reserved.and_return(True)
+
+    expect(module).sleep(1).once().and_return_future(None)
+
+    expect(module.MatchedParkingList).remove(
+        plate=_matched_parking_space.plate
+    ).once().and_return_future(None)
+
+    expect(module.RealTimeLocationService).fetch_real_time_location(
+        plate=_matched_parking_space.plate
+    ).and_return_future(_real_time_location)
+
+    _result = yield module.ParkingSpaceService._handle_matching_status(
+        parking_space=_parking_space
+    )
+
+    assert _result == _real_time_location
+
 
 @pytest.mark.gen_test
 def test_handle_matching_status_with_awaiting_status():
-    pass
+    _plate = '1234567'
+    _parking_space = ParkingSpace.get_mock_object(overrides={
+        'plate': _plate
+    })
+    _matched_parking_space = MatchedParkingSpace.get_mock_object(overrides={
+        'plate': _plate,
+        'status': 'awaiting',
+        'created_at': datetime.datetime.utcnow()
+    })
 
+    expect(module.MatchedParkingList).read_one(
+        plate=_plate
+    ).twice().and_return_future(_matched_parking_space)
 
-@pytest.mark.gen_test
-def test_handle_matching_status_with_reserved_status():
-    pass
+    expect(module).sleep(1).never()
+
+    expect(module.ParkingSpaceService)._matching_waiting_user.never()
+
+    with pytest.raises(module.Timeout):
+        yield module.ParkingSpaceService._handle_matching_status(
+            parking_space=_parking_space
+        )
 
 
 @pytest.mark.gen_test
 def test_handle_matching_status_with_rejected_status():
-    pass
+    _plate = '1234567'
+    _parking_space = ParkingSpace.get_mock_object(overrides={
+        'plate': _plate
+    })
+    _matched_parking_space = MatchedParkingSpace.get_mock_object(overrides={
+        'plate': _plate,
+        'status': 'rejected',
+    })
 
+    expect(module.MatchedParkingList).read_one(
+        plate=_plate
+    ).and_return_future(_matched_parking_space)
 
-@pytest.mark.gen_test
-def test_handle_matching_status_with_expired_status():
-    pass
+    expect(module).sleep(1).never()
+
+    expect(module.MatchedParkingList).remove(
+        plate=_matched_parking_space.plate
+    ).once().and_return_future(None)
+
+    expect(module.ParkingSpaceService)._matching_waiting_user(
+        posted_parking_space=_parking_space
+    ).and_return_future(None)
+
+    with pytest.raises(module.AwaitingMatching):
+        yield module.ParkingSpaceService._handle_matching_status(
+            parking_space=_parking_space
+        )

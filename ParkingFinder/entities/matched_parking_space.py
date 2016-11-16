@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from clay import config
 from schematics.types import (
@@ -24,12 +24,12 @@ class MatchedParkingSpace(Entity):
     status = StringType(
         required=True,
         default='awaiting',
-        choices=['awaiting', 'rejected', 'accepted', 'expired'])
+        choices=['awaiting', 'rejected', 'reserved', 'expired'])
     created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f', default=datetime.utcnow)
 
     @property
-    def is_accepted(self):
-        return self.status == 'accepted'
+    def is_reserved(self):
+        return self.status == 'reserved'
 
     @property
     def is_awaiting(self):
@@ -46,10 +46,12 @@ class MatchedParkingSpace(Entity):
             return True
         else:
             current = datetime.utcnow()
-            return self.created_at + config.get('matching.awaiting_action_timeout') < current
+            delta = config.get('posted_parking.timeout')
+            return self.created_at + timedelta(0, delta) < current
 
     @property
     def is_time_expired(self):
         current = datetime.utcnow()
-        return self.created_at + config.get('matching.awaiting_action_timeout') < current
+        delta = config.get('posted_parking.timeout')
+        return self.created_at + timedelta(0, delta) < current
 
