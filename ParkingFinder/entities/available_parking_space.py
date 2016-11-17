@@ -3,13 +3,12 @@ from datetime import datetime
 from schematics.types import (
     BooleanType,
     DateTimeType,
-    FloatType,
     StringType,
 )
 from schematics.types.compound import ModelType
 
 from ParkingFinder.entities.entity import Entity
-from ParkingFinder.entities.parking_space import ParkingSpace
+from ParkingFinder.entities.location import Location
 
 
 class AvailableParkingSpace(Entity):
@@ -19,10 +18,19 @@ class AvailableParkingSpace(Entity):
     """
     # required variables
 
-    plate = StringType(min_length=1, max_length=7, required=True)
-    latitude = FloatType(required=True)
-    longitude = FloatType(required=True)
-    location = StringType(max_length=255, required=False)
+    plate = StringType(min_length=7, max_length=7, required=True)
+    location = ModelType(model_class=Location, required=True)
     is_active = BooleanType(required=True, default=False)
     created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f', default=datetime.utcnow)
     updated_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f', default=datetime.utcnow)
+
+    @classmethod
+    def get_mock_object(cls, context=None, overrides=None):
+        obj = super(AvailableParkingSpace, cls).get_mock_object(context=context, overrides=overrides)
+        location = overrides and overrides.get('location', None)
+        if location:
+            obj.location = location
+        else:
+            obj.location = Location.get_mock_object()
+        return obj
+
