@@ -1,4 +1,5 @@
 from clay import config
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
 
@@ -28,6 +29,18 @@ awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_times
 # insert -> exception, read-> notFoundException, update-> # of rows affected,  remove -> none -> remove fail
 
 
+class NoResultFoundInMatchedSpaceTable(BaseError):
+    error = "No Result found In Matched Space Table"
+
+
+class UserTerminatedInTheHalfWay(BaseError):
+    error = "User Terminated In The Half Way"
+
+
+class CanNotStopForwardingMessage(BaseError):
+    error = "Can Not Forwarding Message"
+
+
 class UserRequestService(object):
 
     @classmethod
@@ -48,15 +61,14 @@ class UserRequestService(object):
         try:
             user_info = yield WaitingUserPool.read_one(user_id=waiting_user.user_id)
             try:
-                space_return = yield cls._loop_checking_space_availability(waiting_user=waiting_user)
+                space_return = yield cls._loop_checking_space_availability(user_id=waiting_user.user_id)
             except Timeout:
                 pass
         except NoResultFound:
             try:
                 inserted_user = yield WaitingUserPool.insert(waiting_user=waiting_user)
-            except Exception:
-                # TODO: case to handle either AssertionError or validationError thrown from the insertion above
-                pass
+            except IntegrityError:
+                raise InvalidEntity
             try:
                 space_return = yield cls._checking_space_availability(waiting_user=waiting_user)
             except Timeout:
@@ -65,6 +77,7 @@ class UserRequestService(object):
         # branch to handle if user continue to use the service
         try:
             # case where user continue the service
+
             user_info = yield WaitingUserPool.read_one(user_id=waiting_user.user_id)
             if not space_return:
                 raise Timeout
@@ -81,21 +94,24 @@ class UserRequestService(object):
 
     @classmethod
     @coroutine
-    def accept_parking_space(cls, waiting_user, accepted_space_plate):
+    def accept_parking_space(cls, user_id, accepted_space_plate):
         """
         service that handles user's accepting parking case
-        :param: user_id:
+        :param: str user_id:
         :param: accepted_space_plates: can be one or null. if it is null it means user rejects
                 all the spaces we provide
         :raise: TimeOut: use didn't make choice in a specific time range
         :raise: InvalidEntity: this means information among tables is not consistent
                                 possibly internal error
+        :raise: UserTerminatedInTheHalfWay: this means user terminate the service in the half way
         :return: Token: the real_time token
         """
-        user_id = waiting_user.user_id
+
         try:
             list_of_matching_space = yield MatchedParkingList.read_many(user_id=user_id)
             # loop to change the corresponding status in the table
+            # import ipdb
+            # ipdb.set_trace()
             for matched_result in list_of_matching_space:
                 if accepted_space_plate != matched_result.plate:
                     modified_row = yield MatchedParkingList.update(user_id=user_id,
@@ -103,7 +119,7 @@ class UserRequestService(object):
                                                                    status='rejected')
                     if modified_row == 0:
                         raise InvalidEntity
-                elif matched_result.is_expired():
+                elif matched_result.is_expired:
                     modified_row = yield MatchedParkingList.update(usr_id=user_id,
                                                                    plate=matched_result.plate,
                                                                    status='expired')
@@ -124,7 +140,7 @@ class UserRequestService(object):
                 modified_row = yield MatchedParkingList.update(user_id=user_id,
                                                                plate=accepted_space_plate,
                                                                status='rejected')
-                raise InvalidEntity
+                raise UserTerminatedInTheHalfWay
             else:
                 real_time_location = yield RealTimeLocationService.fetch_real_time_location(
                     token=accepted_space_plate
@@ -188,6 +204,7 @@ class UserRequestService(object):
         fetch the space that is near the location
         :param latitude:
         :param longitude:
+        :param location
         :raise NNoResultFound
         :return: List<AvailableParkingSpace>
         """
@@ -209,14 +226,14 @@ class UserRequestService(object):
         duration=awaiting_matching_duration,
     )
     @coroutine
-    def _loop_checking_space_availability(cls, waiting_user):
+    def _loop_checking_space_availability(cls, user_id):
         """
         *** matched_parking_space_table == pre_reserved_table *****
         checking if there are spaces that are assigned to user in the
         matched_parking_space_table only and the result of this function will never
         return a empty list. Either timeout exception(in this case empty list) or
         list with spaces
-        :param WaitingUser waiting_user: this function only accept user that is
+        :param str user_id: this function only accept user that is
                                 marked as "active "in the user waiting pool
         :raise Timeout
         :raise: InvalidEntity : this means information among tables is not consistent
@@ -224,10 +241,10 @@ class UserRequestService(object):
         :return: list<AvailableParkingSpace>
         """
         try:
-            list_of_matched_space = yield MatchedParkingList.read_many(user_id=waiting_user.user_id)
+            list_of_matched_space = yield MatchedParkingList.read_many(user_id=user_id)
             spaces_return = []
             for matching_space in list_of_matched_space:
-                if matching_space.is_awaiting():
+                if matching_space.is_awaiting:
                     try:
                         space = yield AvailableParkingSpacePool.read_one(plate=matching_space.plate)
                         spaces_return.append(space)
@@ -262,6 +279,7 @@ class UserRequestService(object):
         # TODO: read_many API might change based on how the location value stored in each entity 
         # TODO: so parameter might change accordingly
         try:
+
             list_of_available_space = yield AvailableParkingSpacePool.pop_many(latitude=waiting_user.latitude,
                                                                                longitude=waiting_user.longitude,
                                                                                location=waiting_user.location)
@@ -276,37 +294,34 @@ class UserRequestService(object):
                     })
                 )
             raise Return(spaces_return)
-        except Exception:
-            # TODO: case to handle either AssertionError or validationError thrown from the insertion above
-            pass
+        except IntegrityError:
+            raise InvalidEntity
         except NoResultFound:
             # mark user as "active" here
+            # import ipdb
+            # ipdb.set_trace()
             modified_row = yield WaitingUserPool.update(user_id=waiting_user.user_id, is_active=True)
             if modified_row == 0:
                 raise InvalidEntity
-            spaces_return = yield cls._loop_checking_space_availability(waiting_user)
+            spaces_return = yield cls._loop_checking_space_availability(waiting_user.user_id)
             raise Return(spaces_return)
 
     @classmethod
     @coroutine
-    def service_terminate(cls, waiting_user):
+    def service_terminate(cls, user_id):
         """
         terminate the user service as requested
-        :param WaitingUser waiting_user:
-        :raise InvalidEntity: this means information among tables is not consistent
-                                possibly internal error
+        :param str user_id:
+        :raise CanNotStopForwardingMessage: this means either it is too late to terminate the service or
+                                            there is a inconsistency exist in the table, possibly internal error
         :return:
         """
-        # TODO: reminder: this is the only case request part can delete the user in user waiting pool
-        removed = yield WaitingUserPool.remove(user_id=waiting_user.user_id)
+        removed = yield WaitingUserPool.remove(user_id=user_id)
         if not removed:
-            raise InvalidEntity
+            raise CanNotStopForwardingMessage
 
-class NoResultFoundInMatchedSpaceTable(BaseError):
-    pass
 
-class UserTerminatedInTheHalfWay(BaseError):
-    pass
+
 
 
 

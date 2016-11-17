@@ -2,9 +2,9 @@ from tornado.gen import coroutine
 
 
 class WaitingUserPool(object):
-
+    @classmethod
     @coroutine
-    def read_one(self, user_id):
+    def read_one(cls, user_id):
         """
         Return a waiting user by user_id
         :param user_id:
@@ -13,8 +13,9 @@ class WaitingUserPool(object):
         """
         pass
 
+    @classmethod
     @coroutine
-    def read_many(self, location):
+    def read_many(cls, location):
         """
         This method will return all the users in certain (*range) according to given
         coordinate or location
@@ -24,8 +25,9 @@ class WaitingUserPool(object):
         """
         pass
 
+    @classmethod
     @coroutine
-    def insert(self, waiting_user):
+    def insert(cls, waiting_user):
         """
         Insert a new waiting user into pool
 
@@ -34,8 +36,9 @@ class WaitingUserPool(object):
         """
         pass
 
+    @classmethod
     @coroutine
-    def update(self, user_id, is_active):
+    def update(cls, user_id, is_active):
         """
         Update the status(is_active) of the user with given user_id
 
@@ -47,8 +50,9 @@ class WaitingUserPool(object):
         """
         pass
 
+    @classmethod
     @coroutine
-    def remove(self, user_id):
+    def remove(cls, user_id):
         """
         remove a user row from a user waitting pool
         :param user_id:
@@ -57,8 +61,9 @@ class WaitingUserPool(object):
 
         pass
 
+    @classmethod
     @coroutine
-    def pop_one(self, longitude, latitude, location, ignore_user_ids=None, _ranking=None):
+    def pop_one(cls, longitude, latitude, location, ignore_user_ids=None, _ranking=None):
         """
         This method will
             1. read len(ignore_user_ids)+1 active users

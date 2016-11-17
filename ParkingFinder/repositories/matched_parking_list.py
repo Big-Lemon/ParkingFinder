@@ -28,6 +28,7 @@ class MatchedParkingList(object):
         """
         pass
 
+    @classmethod
     @coroutine
     def update(self, user_id, plate, status):
         """
