@@ -36,7 +36,7 @@ class MatchedParkingList(object):
         :raise: NoResultFound:
         :return list<MatchedParkingSpace>:
         """
-        with create_session as session:
+        with create_session() as session:
             matched_parking_list = session.query(MatchedParkingSpaceList).filter(
                 MatchedParkingSpaceList.user_id == user_id
             ).all()
@@ -57,7 +57,7 @@ class MatchedParkingList(object):
         :param str plate:
         :param string status:
         """
-        with create_session as session:
+        with create_session() as session:
             matched_parking_list = session.query(MatchedParkingSpaceList).filter(
                 MatchedParkingSpaceList.user_id == user_id and
                 MatchedParkingSpaceList.plate == plate
@@ -73,7 +73,7 @@ class MatchedParkingList(object):
         :param MatchedParkingSpace matched_parking_space:
         :return MatchedParkingSpace:
         """
-        with create_session as session:
+        with create_session() as session:
             matched_parking_space.validate()
             _matched_parking_space = MatchedParkingSpaceMapper.to_model(matched_parking_space)
             session.add(_matched_parking_space)
@@ -89,12 +89,12 @@ class MatchedParkingList(object):
         :param str plate:
         :return MatchedParkingSpace:
         """
-        with create_session as session:
+        with create_session() as session:
             row = session.query(MatchedParkingList).filter(
                 MatchedParkingSpaceList.plate == plate
             ).delete()
             if row == 0:
                 raise NoResultFound
             entity = MatchedParkingSpaceMapper.to_entity(row)
-
             raise Return(entity)
+
