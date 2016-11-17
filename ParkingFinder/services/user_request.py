@@ -279,10 +279,10 @@ class UserRequestService(object):
         # TODO: read_many API might change based on how the location value stored in each entity 
         # TODO: so parameter might change accordingly
         try:
-
-            list_of_available_space = yield AvailableParkingSpacePool.pop_many(latitude=waiting_user.latitude,
-                                                                               longitude=waiting_user.longitude,
-                                                                               location=waiting_user.location)
+            location = waiting_user.location
+            list_of_available_space = yield AvailableParkingSpacePool.pop_many(latitude=location.latitude,
+                                                                               longitude=location.longitude,
+                                                                               location=location.location)
             spaces_return = list_of_available_space
             for space_element in list_of_available_space:
                 # insert matched result in the Pre_reserved table and mark status as awaiting
@@ -298,8 +298,7 @@ class UserRequestService(object):
             raise InvalidEntity
         except NoResultFound:
             # mark user as "active" here
-            # import ipdb
-            # ipdb.set_trace()
+
             modified_row = yield WaitingUserPool.update(user_id=waiting_user.user_id, is_active=True)
             if modified_row == 0:
                 raise InvalidEntity

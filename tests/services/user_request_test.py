@@ -4,6 +4,7 @@ from doubles import expect
 
 from ParkingFinder.services import user_request as module
 from ParkingFinder.entities import *
+from ParkingFinder.entities.location import Location
 from ParkingFinder.services.user_request import NoResultFoundInMatchedSpaceTable
 
 
@@ -421,19 +422,23 @@ def test_loop_checking_space_availability_space_suitable():
 #TODO: good
 def test_checking_space_availability_with_find_in_no_loop():
     _user_id = 'DaPP'
-    _waiting_user = WaitingUser.get_mock_object(
+    _location_a = Location.get_mock_object(
         overrides={
-            'user_id': _user_id,
             'latitude': '12312312',
             'longitude': '12312321',
             'location': 'DaPP'
+        }
+    )
+
+    _waiting_user = WaitingUser.get_mock_object(
+        overrides={
+            'user_id': _user_id,
+            'location': _location_a
         })
     _available_space = AvailableParkingSpace.get_mock_object(
         overrides={
             'plate': '1234567',
-            'latitude': '12312312',
-            'longitude': '12312321',
-            'location': 'DaPP'
+            'location': _location_a
         }
     )
     _list_of_available_space = [_available_space]
@@ -446,9 +451,9 @@ def test_checking_space_availability_with_find_in_no_loop():
     )
 
     expect(module.AvailableParkingSpacePool).pop_many(
-        latitude=_waiting_user.latitude,
-        longitude=_waiting_user.longitude,
-        location=_waiting_user.location
+        latitude=_location_a.latitude,
+        longitude=_location_a.longitude,
+        location=_location_a.location
     ).and_return_future(_list_of_available_space)
 
     expect(module.MatchedParkingList).insert.and_return_future(_matched_space)
@@ -460,27 +465,31 @@ def test_checking_space_availability_with_find_in_no_loop():
 @pytest.mark.gen_test
 def test_checking_space_availability_with_find_in_loop():
     _user_id = 'DaPP'
-    _waiting_user = WaitingUser.get_mock_object(
+    _location_a = Location.get_mock_object(
         overrides={
-            'user_id': _user_id,
-            'latitude': '12312312',
-            'longitude': '12312321',
-            'location': 'DaPP'
-        })
-    _available_space = AvailableParkingSpace.get_mock_object(
-        overrides={
-            'plate': '1234567',
             'latitude': '12312312',
             'longitude': '12312321',
             'location': 'DaPP'
         }
     )
+
+    _waiting_user = WaitingUser.get_mock_object(
+        overrides={
+            'user_id': _user_id,
+            'location': _location_a
+        })
+    _available_space = AvailableParkingSpace.get_mock_object(
+        overrides={
+            'plate': '1234567',
+            'location': _location_a
+        }
+    )
     _list_of_available_space = [_available_space]
 
     expect(module.AvailableParkingSpacePool).pop_many(
-        latitude=_waiting_user.latitude,
-        longitude=_waiting_user.longitude,
-        location=_waiting_user.location
+        latitude=_location_a.latitude,
+        longitude=_location_a.longitude,
+        location=_location_a.location
     ).and_raise(module.NoResultFound)
 
     expect(module.WaitingUserPool).update(
