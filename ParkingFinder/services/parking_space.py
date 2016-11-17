@@ -90,10 +90,10 @@ class ParkingSpaceService(object):
                 raise NotFound
 
         try:
-            real_time_location = yield cls._handle_matching_status(
+            vehicle = yield cls._handle_matching_status(
                 parking_space=parking_space
             )
-            raise Return(real_time_location)
+            raise Return(vehicle)
         except Timeout:
             # simply ignore timeout exception of _handle_matching_status and get into
             # next round, the _handle_matching_status will remove the entry if
@@ -137,8 +137,7 @@ class ParkingSpaceService(object):
         process in order to match next waiting user
 
         :param parking_space:
-        :return RealTimeLocation: The user accept the parking space and the real time
-            location service is established
+        :return Vehicle: The user accept the parking space
         :raises Timeout: user is
         :raises AwaitingMatching: No available user in the pool
         """
@@ -164,10 +163,8 @@ class ParkingSpaceService(object):
                 # available parking space pool at this point because the waiting user
                 # might check in other parking space during the route
                 # the clean up step should be at checkout step
-                real_time_location = yield RealTimeLocationService.fetch_real_time_location(
-                    plate=matched_parking_space.plate
-                )
-                raise Return(real_time_location)
+                vehicle = yield ParkingLotRepository.read_one(plate=parking_space.plate)
+                raise Return(vehicle)
 
             elif matched_parking_space.is_awaiting:
                 # still waiting user's action

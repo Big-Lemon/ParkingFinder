@@ -10,6 +10,7 @@ from ParkingFinder.base.with_repeat import Timeout
 from ParkingFinder.handlers.handler import BaseHandler
 from ParkingFinder.mappers.real_time_location_mapper import RealTimeLocationMapper
 from ParkingFinder.mappers.available_parking_space import AvailableParkingSpaceMapper
+from ParkingFinder.mappers.parking_space_mapper import ParkingSpaceMapper
 from ParkingFinder.repositories.parking_lot import ParkingLotRepository
 from ParkingFinder.services.user import UserService
 from ParkingFinder.services.parking_space import ParkingSpaceService
@@ -28,15 +29,23 @@ class PostParkingSpaceHandler(BaseHandler):
         {
             "plate": "1234567"
         }
-
+        token is parking car plate
         response format:
         {
             "token": "1234567",
             "latitude": "123.123",
             "longitude": "123.123",
+
             # optional
-            "floor": 1,
-            "location": 'ucla parking lot 7'
+            "level": 1,
+            "description": 'ucla parking lot 7'
+            "vehicle_picture": 
+
+            #Noimplemented
+            "plate":
+            "model":
+            "brand":
+            "color":
         }
 
         :param String user_id:
@@ -50,8 +59,9 @@ class PostParkingSpaceHandler(BaseHandler):
             assert plate
 
             if (yield _verify_vehicle_belonging(user_id=user_id, plate=plate)):
-                real_time_location = yield ParkingSpaceService.post_parking_space(plate=plate)
-                _response = RealTimeLocationMapper.to_record(entity=real_time_location)
+                parking_space = yield ParkingSpaceService.post_parking_space(plate=plate)
+                #need to add car information
+                _response = ParkingSpaceMapper.to_record(entity=parking_space)
                 self.set_status(httplib.OK)
                 self.write(_response)
 
@@ -80,13 +90,45 @@ class ReserveParkingSpaceHandler(BaseHandler):
     @with_token_validation
     @coroutine
     def post(self, user_id):
+    """
+        Reserve a parking space
+        request format:
+        {
+            "user_id": "account_1"
+            "accepted_space_plate": "1234567"
+        }
+        token is parking car plate
+        response format:
+        {
+            "token": "1234567",
+            "latitude": "123.123",
+            "longitude": "123.123",
+
+            # optional
+            "level": 1,
+            "description": 'ucla parking lot 7'
+            "vehicle_picture": 
+
+            #Noimplemented
+            "plate":
+            "model":
+            "brand":
+            "color":
+        }
+
+        :param String user_id:
+        :return:
+    """
         try:
             payload = json.loads(self.request.body)
             plate = payload.get("plate", False)
             assert plate
 
-            real_time_location = yield UserRequestService.accept_parking_space(user_id=user_id, accepted_space_plate=plate)
-            response = RealTimeLocationMapper.to_record(entity=real_time_location)
+            parking_space = yield UserRequestService.accept_parking_space(user_id=user_id, accepted_space_plate=plate)
+
+            #need to add car information
+
+            response = ParkingSpaceMapper.to_record(entity=parking_space)
             self.set_status(httplib.OK)
             self.write(response)
 

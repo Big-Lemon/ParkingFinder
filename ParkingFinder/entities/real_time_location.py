@@ -17,7 +17,7 @@ class Location(Entity):
 
 class RealTimeLocation(Entity):
     """
-    Parking Space Entity
+    Realtime? Entity
 
     """
     # required variables

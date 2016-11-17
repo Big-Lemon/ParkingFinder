@@ -24,7 +24,17 @@ class ParkingSpaceMapper(Mapper):
 
     @staticmethod
     def _to_record(entity):
-        params = entity.to_primitive()
+
+        params = {
+            'token:' entity.plate,
+            'latitude': entity.latitude,
+            'longitude': entity.longitude,
+        }
+
+        if entity.level:
+            params.update({'level': entity.level})
+        if entity.description:
+            params.update({'description': entity.description})
 
         return params
 
