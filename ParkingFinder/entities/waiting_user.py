@@ -5,8 +5,10 @@ from schematics.types import (
     DateTimeType,
     BooleanType,
 )
+from schematics.types.compound import ModelType
 
 from ParkingFinder.entities.entity import Entity
+from ParkingFinder.entities.location import Location
 
 
 class WaitingUser(Entity):
@@ -16,13 +18,17 @@ class WaitingUser(Entity):
     """
     # required variables
     user_id = StringType(min_length=1, max_length=64, required=True)
-    latitude = FloatType(required=True)
-    longitude = FloatType(required=True)
-    location = StringType(max_length=255, required=False)
+    location = ModelType(model_class=Location, required=True)
     created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
     is_active = BooleanType(required=True, default=False)
 
-    # non-required variables
-    level = IntType(required=False)
-    description = StringType(min_length=1, max_length=500, required=False)
+    @classmethod
+    def get_mock_object(cls, context=None, overrides=None):
+        obj = super(WaitingUser, cls).get_mock_object(context=context, overrides=overrides)
+        location = overrides and overrides.get('location', None)
+        if location:
+            obj.location = location
+        else:
+            obj.location = Location.get_mock_object()
+        return obj
 
