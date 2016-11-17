@@ -13,6 +13,7 @@ class ParkingLotRepository(object):
         :return: <ParkingSpace>:
         :raises noResultFound: vehicle with given plate is not in the parking lot
         """
+        
         raise Return()
 
     @classmethod
