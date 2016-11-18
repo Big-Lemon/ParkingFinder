@@ -48,6 +48,7 @@ class MatchedParkingList(object):
             raise Return(entities)
 
 
+    @classmethod
     @coroutine
     def update(self, user_id, plate, status):
         """
