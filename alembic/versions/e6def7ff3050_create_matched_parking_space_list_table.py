@@ -23,6 +23,7 @@ def upgrade():
         sa.Column('plate', sa.String(7), sa.ForeignKey('vehicles.plate'), nullable=False),
         sa.Column('status', sa.Enum('awaiting', 'rejected', 'accepted', 'expired', name='status_types'),
                   nullable=False, default='awaiting'),
+        # sa.Column('status', sa.String(8), nullable=False, default='awaiting'),
         sa.Column('created_at', sa.DateTime, nullable=False, default=sa.func),
     )
 

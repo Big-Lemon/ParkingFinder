@@ -18,8 +18,8 @@ class WaitingUsers(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     location = Column(String(255), nullable=True)
-    level = Column(Integer, nullable=False, default=False)
-    is_active = Column()
+    level = Column(Integer, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
 
 

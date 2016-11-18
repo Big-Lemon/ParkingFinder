@@ -5,7 +5,6 @@ from ParkingFinder.base.async_db import create_session
 from ParkingFinder.mappers.matched_parking_space_mapper import MatchedParkingSpaceMapper
 from ParkingFinder.tables.matched_parking_space_list import MatchedParkingSpaceList
 
-# TODO: check and modify return type
 
 class MatchedParkingList(object):
 
@@ -63,6 +62,9 @@ class MatchedParkingList(object):
                 MatchedParkingSpaceList.plate == plate
             ).one()
             matched_parking_list.status = status
+
+            entity = MatchedParkingSpaceMapper.to_entity(record=matched_parking_list)
+            raise Return(entity)
 
 
     @staticmethod
