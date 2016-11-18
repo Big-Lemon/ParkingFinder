@@ -1,5 +1,10 @@
+from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
 
+from ParkingFinder.base.async_db import create_session
+from ParkingFinder.base.errors import NotFound
+from ParkingFinder.mappers.available_parking_space_mapper import AvailableParkingSpaceMapper
+from ParkingFinder.tables.available_parking_space_pool import AvailableParkingSpacePool as Pool
 
 class AvailableParkingSpacePool(object):
 
@@ -13,7 +18,12 @@ class AvailableParkingSpacePool(object):
         :return AvailableParkingSpace:
         :raises NoResultFound: the vehicle with given plate hasn't been posted yet
         """
-        raise Return()
+        with create_session() as session:
+            parking_space = session.query(Pool).filter(
+                Pool.plate == plate
+            ).one()
+            entity = AvailableParkingSpaceMapper.to_entity(record=parking_space)
+            raise Return()
 
     @staticmethod
     @coroutine
@@ -47,6 +57,11 @@ class AvailableParkingSpacePool(object):
         :param AvailableParkingSpace available_parking_space:
         :return AvailableParkingSpace:
         """
+        with create_session() as session:
+            #available_parking_space.validate()
+            _available_parking_space = AvailableParkingSpaceMapper.to_model(available_parking_space)
+            session.add(_available_parking_space)
+            raise Return(available_parking_space)
         pass
 
     @classmethod

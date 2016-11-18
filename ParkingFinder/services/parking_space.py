@@ -71,7 +71,6 @@ class ParkingSpaceService(object):
         Publish a checked-in parking space to the Available Parking Space Pool
         Return a real time loc token with location of the other user if
         matching successfully, otherwise throw exception after timeout
-
         :param str plate: plate of the vehicle in the parking space
         :return RealTimeLocation: real time token with location of the matched waiting user
         :raises Timeout: timeout, user can send post request again to continue listening the status
@@ -112,10 +111,19 @@ class ParkingSpaceService(object):
         :raises NoResultFound: The vehicle with given plate have not been checked in yet
         """
         parking_space = yield ParkingLotRepository.read_one(plate=plate)
+        location = {
+            'longitude': parking_space.longitude,
+            'latitude': parking_space.latitude,
+        }
+        if parking_space.level:
+            location.update({'level': parking_space.level})
+        if parking_space.location:
+            location.update({'location': parking_space.location})
 
         available_parking_space = yield AvailableParkingSpacePool.insert(
             available_parking_space=AvailableParkingSpace({
                 'plate': parking_space.plate,
+                'location': location,
                 'is_active': False
             })
         )

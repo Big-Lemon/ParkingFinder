@@ -17,7 +17,7 @@ from ParkingFinder.services.parking_space import ParkingSpaceService
 from ParkingFinder.services.real_time_location_service import RealTimeLocationService
 from ParkingFinder.services.user_request import UserRequestService
 
-
+#每次返回的时候要加上2个list 的 车的
 class PostParkingSpaceHandler(BaseHandler):
 
     @with_token_validation

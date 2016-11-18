@@ -27,13 +27,11 @@ class ParkingLot(Base):
             'longitude: {}, ' \
             'location: {}, '\
             'created_at: {}, '\
-            'level: {}, ' \
-            'description: {}'.format(
+            'level: {}, '.format(
                 self.plate,
                 self.latitude,
                 self.longitude,
                 self.location,
                 self.created_at,
                 self.level,
-                self.description,
         )

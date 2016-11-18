@@ -61,11 +61,11 @@ class WaitingUserPool(object):
     def pop_one(self, longitude, latitude, location, ignore_user_ids=None, _ranking=None):
         """
         This method will
-            1. read len(ignore_user_ids)+1 active users
+            1. read len(ignore_user_ids) +1 active users
             2. rank them with _ranking method if it is provided
-            3. and get first (#) users
-            4. update the status of those users as inactive
-            5. return the users
+            3. and get first user
+            4. update the status of this user as inactive
+            5. return the user
 
         :param float longitude:
         :param float latitude:
@@ -75,4 +75,5 @@ class WaitingUserPool(object):
         :return WaitingUser:
         :raises NoResultFound: no waiting user in given coordinate
         """
+
         pass

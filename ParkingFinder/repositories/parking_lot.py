@@ -1,5 +1,10 @@
 from tornado.gen import coroutine, Return
+from sqlalchemy.orm.exc import NoResultFound
 
+from ParkingFinder.base.async_db import create_session
+from ParkingFinder.base.errors import NotFound
+from ParkingFinder.mappers.parking_space_mapper import ParkingSpaceMapper
+from ParkingFinder.tables.parking_lot import ParkingLot
 
 class ParkingLotRepository(object):
 
@@ -13,8 +18,12 @@ class ParkingLotRepository(object):
         :return: <ParkingSpace>:
         :raises noResultFound: vehicle with given plate is not in the parking lot
         """
-        
-        raise Return()
+        with create_session() as session:
+            parkinglot = session.query(ParkingLot).filter(
+                ParkingLot.plate == plate
+            ).one()
+            entity = ParkingSpaceMapper.to_entity(record=parkinglot)
+            raise Return(entity)
 
     @classmethod
     @coroutine
@@ -35,7 +44,11 @@ class ParkingLotRepository(object):
 
         :return ParkingSpace:
         """
-        raise NotImplemented
+        with create_session() as session:
+            parking_space.validate()
+            _parking_space = ParkingSpaceMapper.to_model(parking_space)
+            session.add(_parking_space)
+            raise Return(parking_space)
 
     @classmethod
     @coroutine

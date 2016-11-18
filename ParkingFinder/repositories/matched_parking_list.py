@@ -1,5 +1,11 @@
-from tornado.gen import coroutine
+from tornado.gen import coroutine, Return
+from sqlalchemy.orm.exc import NoResultFound
 
+from ParkingFinder.base.async_db import create_session
+from ParkingFinder.mappers.matched_parking_space_mapper import MatchedParkingSpaceMapper
+from ParkingFinder.tables.matched_parking_space_list import MatchedParkingSpaceList
+
+# TODO: check and modify return type
 
 class MatchedParkingList(object):
 
@@ -8,25 +14,39 @@ class MatchedParkingList(object):
     def read_one(cls, plate):
         """
         Read one by plate
-
         :param str plate:
         :return MatchedParkingSpace:
         :raises vehicle with given plate doesn't have matched waiting user
         """
-        pass
+        with create_session() as session:
+            matched_parking_list = session.query(MatchedParkingSpaceList).filter(
+                MatchedParkingSpaceList.plate == plate
+            ).one()
+            entity = MatchedParkingSpaceMapper.to_entity(record=matched_parking_list)
+
+            raise Return(entity)
+
 
     @classmethod
     @coroutine
     def read_many(cls, user_id):
         """
-        Read many and only return list<MatchedParkingSpace> such that every
-        MatchedParkingSpace inside with status "waiting"
-
+        Read many and only return list<MatchedParkingSpace>
         :param str user_id:
         :raise: NoResultFound:
         :return list<MatchedParkingSpace>:
         """
-        pass
+        with create_session as session:
+            matched_parking_list = session.query(MatchedParkingSpaceList).filter(
+                MatchedParkingSpaceList.user_id == user_id
+            ).all()
+            entities = [
+                MatchedParkingSpaceMapper.to_entity(record=matched_parking)
+                for matched_parking in matched_parking_list
+                ]
+
+            raise Return(entities)
+
 
     @coroutine
     def update(self, user_id, plate, status):
@@ -35,9 +55,14 @@ class MatchedParkingList(object):
         :param str user_id:
         :param str plate:
         :param string status:
-
         """
-        pass
+        with create_session as session:
+            matched_parking_list = session.query(MatchedParkingSpaceList).filter(
+                MatchedParkingSpaceList.user_id == user_id and
+                MatchedParkingSpaceList.plate == plate
+            ).one()
+            matched_parking_list.status = status
+
 
     @staticmethod
     @coroutine
@@ -47,15 +72,28 @@ class MatchedParkingList(object):
         :param MatchedParkingSpace matched_parking_space:
         :return MatchedParkingSpace:
         """
-        pass
+        with create_session as session:
+            matched_parking_space.validate()
+            _matched_parking_space = MatchedParkingSpaceMapper.to_model(matched_parking_space)
+            session.add(_matched_parking_space)
+
+            raise Return(matched_parking_space)
+
 
     @classmethod
     @coroutine
     def remove(cls, plate):
         """
         Remove a matched Parking Space from the list
-
         :param str plate:
         :return MatchedParkingSpace:
         """
-        pass
+        with create_session as session:
+            row = session.query(MatchedParkingList).filter(
+                MatchedParkingSpaceList.plate == plate
+            ).delete()
+            if row == 0:
+                raise NoResultFound
+            entity = MatchedParkingSpaceMapper.to_entity(row)
+
+            raise Return(entity)

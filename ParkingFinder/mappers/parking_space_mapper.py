@@ -26,7 +26,7 @@ class ParkingSpaceMapper(Mapper):
     def _to_record(entity):
 
         params = {
-            'token:' entity.plate,
+            'token:': entity.plate,
             'latitude': entity.latitude,
             'longitude': entity.longitude,
         }
