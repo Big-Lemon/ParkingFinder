@@ -1,7 +1,12 @@
+# coding=utf-8
 from clay import config
 from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
 from math import sqrt
+from math import radians
+from math import sin
+from math import cos
+from math import atan2
 
 from ParkingFinder.base.async_db import create_session
 from ParkingFinder.base.errors import NotFound
@@ -113,5 +118,26 @@ class WaitingUserPool(object):
                 raise Return(user)
 
     @staticmethod
-    def distance(waiting_users, longitude, latitude):
-        return sqrt((float(waiting_users.longitude) - longitude)**2 + (float(waiting_users.latitude) - latitude)**2)
+    def distance(waiting_user, longitude, latitude):
+        """
+        This function will
+            use the ‘haversine’ formula to calculate the great-circle distance between
+            two points – that is, the shortest distance over the earth’s surface – giving an
+            ‘as-the-crow-flies’ distance between the points).
+        :param waiting_user:
+        :param longitude:
+        :param latitude:
+        :return: float distance(unit: m)
+        """
+        EARTH_RADIUS = 6371000
+        phi1 = radians(waiting_user.location.latitude)
+        phi2 = radians(latitude)
+        delta_phi = radians(latitude - waiting_user.location.latitude)
+        delta_lambda = radians(longitude - waiting_user.location.longitude)
+        a = sin(delta_phi/2) * sin(delta_phi/2) + \
+            cos(phi1) * cos(phi2) + \
+            sin(delta_lambda/2) * sin(delta_lambda/2)
+        c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        dist = EARTH_RADIUS * c
+        return dist
+
