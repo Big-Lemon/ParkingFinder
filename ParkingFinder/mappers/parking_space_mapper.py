@@ -9,16 +9,19 @@ class ParkingSpaceMapper(Mapper):
 
     @staticmethod
     def _build_map(record):
-        params = {
-            'plate': record.plate,
-            'latitude': record.latitude,
+        location = {
             'longitude': record.longitude,
-            'created_at': record.created_at,
+            'latitude': record.latitude,
         }
         if record.level:
-            params.update({'level': record.level})
+            location.update({'level': record.level})
         if record.location:
-            params.update({'location': record.location})
+            location.update({'location': record.location})
+        params = {
+            'plate': record.plate,
+            'location': location,
+            'created_at': record.created_at,
+        }
 
         return params
 
@@ -27,14 +30,14 @@ class ParkingSpaceMapper(Mapper):
 
         params = {
             'token:': entity.plate,
-            'latitude': entity.latitude,
-            'longitude': entity.longitude,
+            'latitude': entity.location.latitude,
+            'longitude': entity.location.longitude,
         }
 
-        if entity.level:
+        if entity.location.level:
             params.update({'level': entity.level})
-        if entity.description:
-            params.update({'description': entity.description})
+        if entity.location.location:
+            params.update({'location': entity.location})
 
         return params
 
@@ -42,13 +45,13 @@ class ParkingSpaceMapper(Mapper):
     def _to_model(cls, entity):
         params = {
             'plate': entity.plate,
-            'latitude': entity.latitude,
-            'longitude': entity.longitude,
+            'latitude': entity.location.latitude,
+            'longitude': entity.location.longitude,
             'created_at': entity.created_at,
         }
-        if entity.level:
+        if entity.location.level:
             params.update({'level': entity.level})
-        if entity.location:
+        if entity.location.location:
             params.update({'location': entity.location})
 
         return cls._MODEL(**params)

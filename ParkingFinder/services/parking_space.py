@@ -116,9 +116,9 @@ class ParkingSpaceService(object):
             'latitude': parking_space.latitude,
         }
         if parking_space.level:
-            location.update({'level': parking_space.level})
+            location.update({'level': parking_space.location.level})
         if parking_space.location:
-            location.update({'location': parking_space.location})
+            location.update({'location': parking_space.location.location})
 
         available_parking_space = yield AvailableParkingSpacePool.insert(
             available_parking_space=AvailableParkingSpace({
@@ -205,9 +205,9 @@ class ParkingSpaceService(object):
         :return None: No waiting user found in the pool
         """
         waiting_user = yield WaitingUserPool.pop_one(
-            longitude=posted_parking_space.longitude,
-            latitude=posted_parking_space.latitude,
-            location=posted_parking_space.location
+            longitude=posted_parking_space.location.longitude,
+            latitude=posted_parking_space.location.latitude,
+            location=posted_parking_space.location.location
         )
         if waiting_user:
             matching_record = cls._map_to_matched_parking(

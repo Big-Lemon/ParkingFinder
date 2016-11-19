@@ -41,14 +41,26 @@ def test_read_many_with_multiple_result():
 
 @pytest.mark.gen_test
 def test_read_many_with_one_result():
-    matched_parking_space_list = yield module.MatchedParkingList.read_many('valid_account_2')
+    matched_parking_space_list = yield module.MatchedParkingList.read_many('valid_account_1')
     for matched_parking_space in matched_parking_space_list:
         matched_parking_space.validate()
-    assert len(matched_parking_space_list) == 2
+    assert len(matched_parking_space_list) == 1
     matched_parking_space_list.sort()
-    entity1 = yield module.MatchedParkingList.read_one('ANRCHST')
-    entity2 = yield module.MatchedParkingList.read_one('4JTY881')
-    expected_list = [entity1, entity2]
+    entity = yield module.MatchedParkingList.read_one('6TRJ224')
+    expected_list = [entity]
+    expected_list.sort()
+    assert matched_parking_space_list == expected_list
+
+
+@pytest.mark.gen_test
+def test_read_many_with_no_result():
+    matched_parking_space_list = yield module.MatchedParkingList.read_many('valid_account_1')
+    for matched_parking_space in matched_parking_space_list:
+        matched_parking_space.validate()
+    assert len(matched_parking_space_list) == 1
+    matched_parking_space_list.sort()
+    entity = yield module.MatchedParkingList.read_one('6TRJ224')
+    expected_list = [entity]
     expected_list.sort()
     assert matched_parking_space_list == expected_list
 

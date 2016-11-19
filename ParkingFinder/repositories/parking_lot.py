@@ -54,7 +54,7 @@ class ParkingLotRepository(object):
 
         :return:
         """
-        with create_session as session:
+        with create_session() as session:
             row = session.query(ParkingLot).filter(
                 ParkingLot.plate == plate
             ).delete()
