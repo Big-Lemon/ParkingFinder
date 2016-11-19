@@ -60,5 +60,5 @@ class ParkingLotRepository(object):
             ).delete()
             if row == 0:
                 raise NoResultFound
-
             raise Return(row)
+

@@ -31,9 +31,11 @@ class MatchedParkingList(object):
     def read_many(cls, user_id):
         """
         Read many and only return list<MatchedParkingSpace>
+
         :param str user_id:
         :return list<MatchedParkingSpace>:
         """
+
         with create_session() as session:
             matched_parking_list = session.query(MatchedParkingSpaceList).filter(
                 MatchedParkingSpaceList.user_id == user_id
@@ -55,13 +57,13 @@ class MatchedParkingList(object):
         :param str plate:
         :param string status:
         """
+
         with create_session() as session:
             matched_parking_list = session.query(MatchedParkingSpaceList).filter(
                 MatchedParkingSpaceList.user_id == user_id and
                 MatchedParkingSpaceList.plate == plate
             ).one()
             matched_parking_list.status = status
-
             entity = MatchedParkingSpaceMapper.to_entity(record=matched_parking_list)
             raise Return(entity)
 
@@ -74,6 +76,7 @@ class MatchedParkingList(object):
         :param MatchedParkingSpace matched_parking_space:
         :return MatchedParkingSpace:
         """
+
         with create_session() as session:
             matched_parking_space.validate()
             _matched_parking_space = MatchedParkingSpaceMapper.to_model(matched_parking_space)
