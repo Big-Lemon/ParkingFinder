@@ -72,7 +72,7 @@ class WaitingUserPool(object):
         """
         with create_session() as session:
             waiting_user = session.query(WaitingUsers).filter(
-                WaitingUsers.user_id == user_id and
+                WaitingUsers.user_id == user_id
             ).one()
             waiting_user.is_active = is_active
             entity = WaitingUserMapper.to_entity(record=waiting_user)

@@ -136,7 +136,7 @@ class AvailableParkingSpacePool(object):
             ).all()
 
             parking_spaces=sorted(parking_spaces, key=lambda p: cls._distance(
-                parking_space=p
+                parking_space=p,
                 longitude=longitude,
                 latitude=latitude,
             ))
@@ -153,27 +153,7 @@ class AvailableParkingSpacePool(object):
 
     @staticmethod
     def _distance(parking_space, longitude, latitude):
-        """
-        This function will
-            use the ‘haversine’ formula to calculate the great-circle distance between
-            two points – that is, the shortest distance over the earth’s surface – giving an
-            ‘as-the-crow-flies’ distance between the points).
-        :param waiting_user:
-        :param longitude:
-        :param latitude:
-        :return: float distance(unit: m)
-        """
-        EARTH_RADIUS = 6371000
-        phi1 = radians(waiting_user.location.latitude)
-        phi2 = radians(latitude)
-        delta_phi = radians(latitude - waiting_user.location.latitude)
-        delta_lambda = radians(longitude - waiting_user.location.longitude)
-        a = sin(delta_phi/2) * sin(delta_phi/2) + \
-            cos(phi1) * cos(phi2) + \
-            sin(delta_lambda/2) * sin(delta_lambda/2)
-        c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        dist = EARTH_RADIUS * c
-        return dist
+        pass
 
     @staticmethod
     def _is_in_range(longitude, latitude, parking_space):
