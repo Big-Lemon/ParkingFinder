@@ -24,7 +24,12 @@ class WaitingUserPool(object):
         :return: WaitingUser
         :raise NoResultFound: user is not in the pool
         """
-        pass
+        with create_session() as session:
+            WaitingUser = session.query(WaitingUsers).filter(
+                WaitingUsers.user_id == user_id
+            ).one()
+            entity = WaitingUserMapper.to_entity(record=user_id)
+            raise Return(entity)
 
     @classmethod
     @coroutine
@@ -47,7 +52,11 @@ class WaitingUserPool(object):
         :param WaitingUser waiting_user:
         :return:
         """
-        pass
+        with create_session() as session:
+            waiting_user.validate()
+            _waiting_user = WaitingUserMapper.to_model(waiting_user)
+            session.add(_waiting_user)
+            raise Return(waiting_user)
 
     @classmethod
     @coroutine
@@ -61,7 +70,13 @@ class WaitingUserPool(object):
         :return:
         :raises NoResultFound: use is not in the pool
         """
-        pass
+        with create_session() as session:
+            waiting_user = session.query(WaitingUsers).filter(
+                WaitingUsers.user_id == user_id and
+            ).one()
+            waiting_user.is_active = is_active
+            entity = WaitingUserMapper.to_entity(record=waiting_user)
+            raise Return(entity)
 
     @classmethod
     @coroutine
@@ -105,12 +120,12 @@ class WaitingUserPool(object):
             total = (len(_ignore_user_ids) + 2)
 
 
-            sorted(_ignore_user_ids)
+            _ignore_user_ids = sorted(_ignore_user_ids)
             if _waiting_users == None:
                 raise NoResultFound
 
             #sorted by distance
-            _waiting_users = sorted(_waiting_users, key=lambda e: cls.distance(e, longitude, latitude))
+            _waiting_users = sorted(_waiting_users, key=lambda u: cls._distance(u, longitude, latitude))
             
             for user in _waiting_users:
                 if user.user_id not in _ignore_user_ids:
@@ -118,7 +133,7 @@ class WaitingUserPool(object):
                 raise Return(user)
 
     @staticmethod
-    def distance(waiting_user, longitude, latitude):
+    def _distance(waiting_user, longitude, latitude):
         """
         This function will
             use the ‘haversine’ formula to calculate the great-circle distance between
