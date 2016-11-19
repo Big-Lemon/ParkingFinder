@@ -1,3 +1,4 @@
+from clay import config
 from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
 
@@ -5,6 +6,7 @@ from ParkingFinder.base.async_db import create_session
 from ParkingFinder.base.errors import NotFound
 from ParkingFinder.mappers.available_parking_space_mapper import AvailableParkingSpaceMapper
 from ParkingFinder.tables.available_parking_space_pool import AvailableParkingSpacePool as Pool
+
 
 class AvailableParkingSpacePool(object):
 
@@ -23,11 +25,12 @@ class AvailableParkingSpacePool(object):
                 Pool.plate == plate
             ).one()
             entity = AvailableParkingSpaceMapper.to_entity(record=parking_space)
-            raise Return()
+            raise Return(entity)
 
-    @staticmethod
+    @classmethod
     @coroutine
     def read_many(
+            cls,
             longitude=None,
             latitude=None,
             location=None,
@@ -46,7 +49,29 @@ class AvailableParkingSpacePool(object):
         :return List<AvailableParkingSpace>:
         """
         assert (longitude and latitude) or location
-        pass
+        radius = config.get('matching.radius')
+        square_radius = radius * radius
+
+        n = config.get('matching.num_display_parking_spaces')
+        with create_session() as session:
+            parking_spaces = session.query(Pool).filter(
+                Pool.location == location or
+                (
+                    ((Pool.longitude - longitude) * (Pool.longitude - longitude)
+                        + (Pool.latitude + latitude) * (Pool.latitude - latitude))
+                    < square_radius
+                )
+            ).all()
+            sorted(parking_spaces, key=lambda p: cls._distance(
+                longitude=longitude,
+                latitude=latitude,
+                parking_space=p
+            ))
+            _parking_spaces = [AvailableParkingSpaceMapper.to_entity(parking_space)
+                              for parking_space in parking_spaces[0:n]]
+            raise Return(_parking_spaces)
+
+
 
     @classmethod
     @coroutine
@@ -87,7 +112,7 @@ class AvailableParkingSpacePool(object):
 
     @classmethod
     @coroutine
-    def pop_many(cls, longitude, latitude, location, _filter=None):
+    def pop_many(cls, longitude, latitude, location, ignore_list=None,_filter=None):
         """
         This method will find (#) of parking spaces within certain (*range)
         that can be passed by '_filter'
@@ -102,4 +127,48 @@ class AvailableParkingSpacePool(object):
         :param func _filter:
         :return list<AvailableParkingSpace>:
         """
-        pass
+        assert (longitude and latitude) or location
+        radius = config.get('matching.radius')
+        square_radius = radius * radius
+        _ignore_list = set(ignore_list or [])
+        n = config.get('matching.num_display_parking_spaces')
+
+        with create_session() as session:
+            parking_spaces = session.query(Pool).filter(
+                Pool.location == location or
+                (
+                    ((Pool.longitude - longitude) * (Pool.longitude - longitude)
+                     + (Pool.latitude + latitude) * (Pool.latitude - latitude))
+                    < square_radius
+                )
+            ).limit(len(_ignore_list) + n)
+
+            sorted(parking_spaces, key=lambda p: cls._distance(
+                longitude=longitude,
+                latitude=latitude,
+                parking_space=p
+            ))
+            count = 0
+            _parking_spaces = []
+            for parking_space in parking_spaces:
+                if parking_space.plate not in _ignore_list:
+                    parking_space.is_active = False
+                    _parking_spaces.append(AvailableParkingSpaceMapper.to_entity(parking_space))
+                    count += 1
+                if count >= n:
+                    break
+            raise Return(_parking_spaces)
+
+    @staticmethod
+    def _distance(longitude, latitude, parking_space):
+        x = abs(longitude - parking_space.longitude)
+        y = abs(latitude- parking_space.latitude)
+        return x * x + y * y
+
+    @staticmethod
+    def _is_in_range(longitude, latitude, parking_space):
+        r = config.get('matching.radius')
+        r = r * r
+        x = abs(longitude - parking_space.longitude)
+        y = abs(latitude- parking_space.latitude)
+        return x * x + y * y < r

@@ -7,17 +7,18 @@ from tornado.gen import coroutine, Return
 from ParkingFinder.base.errors import InvalidArguments, NotFound
 from ParkingFinder.base.validate_access_token import with_token_validation
 from ParkingFinder.base.with_repeat import Timeout
+from ParkingFinder.entities.parking_space import ParkingSpace
 from ParkingFinder.handlers.handler import BaseHandler
 from ParkingFinder.mappers.real_time_location_mapper import RealTimeLocationMapper
 from ParkingFinder.mappers.available_parking_space import AvailableParkingSpaceMapper
 from ParkingFinder.mappers.parking_space_mapper import ParkingSpaceMapper
 from ParkingFinder.repositories.parking_lot import ParkingLotRepository
+from ParkingFinder.repositories.vehicle_repository import VehicleRepository
 from ParkingFinder.services.user import UserService
 from ParkingFinder.services.parking_space import ParkingSpaceService
 from ParkingFinder.services.real_time_location_service import RealTimeLocationService
 from ParkingFinder.services.user_request import UserRequestService
 
-#每次返回的时候要加上2个list 的 车的
 class PostParkingSpaceHandler(BaseHandler):
 
     @with_token_validation
@@ -90,35 +91,35 @@ class ReserveParkingSpaceHandler(BaseHandler):
     @with_token_validation
     @coroutine
     def post(self, user_id):
-    """
-        Reserve a parking space
-        request format:
-        {
-            "user_id": "account_1"
-            "accepted_space_plate": "1234567"
-        }
-        token is parking car plate
-        response format:
-        {
-            "token": "1234567",
-            "latitude": "123.123",
-            "longitude": "123.123",
+        """
+            Reserve a parking space
+            request format:
+            {
+                "user_id": "account_1"
+                "accepted_space_plate": "1234567"
+            }
+            token is parking car plate
+            response format:
+            {
+                "token": "1234567",
+                "latitude": "123.123",
+                "longitude": "123.123",
 
-            # optional
-            "level": 1,
-            "description": 'ucla parking lot 7'
-            "vehicle_picture": 
+                # optional
+                "level": 1,
+                "description": 'ucla parking lot 7'
+                "vehicle_picture":
 
-            #Noimplemented
-            "plate":
-            "model":
-            "brand":
-            "color":
-        }
+                #Noimplemented
+                "plate":
+                "model":
+                "brand":
+                "color":
+            }
 
-        :param String user_id:
-        :return:
-    """
+            :param String user_id:
+            :return:
+        """
         try:
             payload = json.loads(self.request.body)
             plate = payload.get("plate", False)
@@ -126,20 +127,19 @@ class ReserveParkingSpaceHandler(BaseHandler):
 
             parking_space = yield UserRequestService.accept_parking_space(user_id=user_id, accepted_space_plate=plate)
 
-            #need to add car information
+            vehicle = yield VehicleRepository.retrieve_vehicle_by_plate(plate=parking_space.plate)
 
-            response = ParkingSpaceMapper.to_record(entity=parking_space)
+            _parking_space = ParkingSpaceMapper.to_record(entity=parking_space)
+
             self.set_status(httplib.OK)
-            self.write(response)
-
-            if not plate:
-                yield UserRequestService.reject_all_parking(user_id=user_id)
-                self.set_status(httplib.OK)
-            else:
-                pass
+            self.write({
+                'vehicle': vehicle,
+                'parking_space': _parking_space
+            })
 
         except Timeout:
             self.set_status(httplib.OK)
+            httplib
             self.write({
                 'error': 'Reservation Expired'
             })
@@ -159,11 +159,18 @@ class RejectParkingSpaceHandler(BaseHandler):
         try:
             available_parking_spaces = yield UserRequestService.reject_all_parking(user_id=user_id)
             self.set_status(httplib.OK)
+
             if available_parking_spaces:
-                _response = AvailableParkingSpaceMapper.to_record(entity=available_parking_spaces)
-                self.write(_response)
+                _available_parking_spaces = [AvailableParkingSpaceMapper.to_record(
+                    entity=available_parking_space
+                ) for available_parking_space in available_parking_spaces]
+                self.write({
+                        'available_parking_spaces': _available_parking_spaces
+                    })
             else:
-                self.write(None)
+                self.write({
+                    'available_parking_spaces': []
+                })
 
         except Timeout:
             self.set_status(httplib.OK)
@@ -190,8 +197,8 @@ class ParkingLotHandler(BaseHandler):
             assert plate
 
             if (yield _verify_vehicle_belonging(user_id=user_id, plate=plate)):
+                # TODO if the user checkout before connection established with a waiting user.
                 removed = yield ParkingLotRepository.remove(plate=plate)
-                yield RealTimeLocationService.terminate_real_time_location(token=plate)
                 if not removed:
                     raise InvalidArguments
                 self.set_status(httplib.OK)
@@ -214,19 +221,28 @@ class ParkingLotHandler(BaseHandler):
             payload = json.loads(self.request.body)
             plate = payload.get("plate", None)
             token = payload.get("token", None)
-
-            assert plate
+            longitude = payload.get("longtitude", None)
+            latitude = payload.get("latitude", None)
+            # TODO convert longtitude & latitude to address before insert into parking lot
+            assert plate and longitude and latitude
 
             if (yield _verify_vehicle_belonging(user_id=user_id, plate=plate)):
-                removed = yield ParkingLotRepository.remove(plate=plate)
+                parking_space = yield ParkingLotRepository.insert(parking_space=ParkingSpace({
+                    'plate': plate,
+                    'longitude': longitude,
+                    'latitude': latitude
+                }))
+
                 yield UserRequestService.service_terminate(user_id=user_id)
-                yield RealTimeLocationService.terminate_real_time_location(token=token, user_id=user_id)
-                if not removed:
-                    raise InvalidArguments
+                _parking_space = ParkingSpaceMapper.to_record(entity=parking_space)
                 self.set_status(httplib.OK)
+                self.write({
+                    'parking_space': _parking_space
+                })
             else:
                 raise InvalidArguments
-        except InvalidArguments:
+            # TODO handle Integrity Exception from insert method
+        except (AssertionError, InvalidArguments):
             self.set_status(httplib.BAD_REQUEST)
 
 

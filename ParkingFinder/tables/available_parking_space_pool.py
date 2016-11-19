@@ -20,7 +20,7 @@ class AvailableParkingSpacePool(Base):
     longitude = Column(Float, nullable=False)
     location = Column(String(255), nullable=True)
     level = Column(Integer, nullable=True)
-    is_active = Column(Boolean, nullable=False, default=False),
+    is_active = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 

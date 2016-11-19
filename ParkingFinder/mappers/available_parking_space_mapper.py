@@ -21,11 +21,14 @@ class AvailableParkingSpaceMapper(Mapper):
         params = {
             'plate': record.plate,
             'location': location,
-            'is_active': record.is_active,
             'created_at': record.created_at,
             'updated_at': record.updated_at,
         }
-
+        print record.is_active
+        if record.is_active == 1:
+            params.update({'is_active': True})
+        else:
+            params.update({'is_active': False})
         return params
 
 

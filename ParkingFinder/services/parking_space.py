@@ -205,8 +205,8 @@ class ParkingSpaceService(object):
         :return None: No waiting user found in the pool
         """
         waiting_user = yield WaitingUserPool.pop_one(
-            longitude=posted_parking_space.longitude,
-            latitude=posted_parking_space.latitude,
+            longitude=posted_parking_space.location.longitude,
+            latitude=posted_parking_space.location.latitude,
             location=posted_parking_space.location
         )
         if waiting_user:
