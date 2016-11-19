@@ -112,13 +112,13 @@ class ParkingSpaceService(object):
         """
         parking_space = yield ParkingLotRepository.read_one(plate=plate)
         location = {
-            'longitude': parking_space.longitude,
-            'latitude': parking_space.latitude,
+            'longitude': parking_space.location.longitude,
+            'latitude': parking_space.location.latitude,
         }
-        if parking_space.level:
-            location.update({'level': parking_space.level})
-        if parking_space.location:
-            location.update({'location': parking_space.location})
+        if parking_space.location.level:
+            location.update({'level': parking_space.location.level})
+        if parking_space.location.location:
+            location.update({'location': parking_space.location.location})
 
         available_parking_space = yield AvailableParkingSpacePool.insert(
             available_parking_space=AvailableParkingSpace({

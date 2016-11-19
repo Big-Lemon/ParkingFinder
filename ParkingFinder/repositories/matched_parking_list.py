@@ -5,7 +5,6 @@ from ParkingFinder.base.async_db import create_session
 from ParkingFinder.mappers.matched_parking_space_mapper import MatchedParkingSpaceMapper
 from ParkingFinder.tables.matched_parking_space_list import MatchedParkingSpaceList
 
-# TODO: check and modify return type
 
 class MatchedParkingList(object):
 
@@ -32,11 +31,12 @@ class MatchedParkingList(object):
     def read_many(cls, user_id):
         """
         Read many and only return list<MatchedParkingSpace>
+
         :param str user_id:
-        :raise: NoResultFound:
         :return list<MatchedParkingSpace>:
         """
-        with create_session as session:
+
+        with create_session() as session:
             matched_parking_list = session.query(MatchedParkingSpaceList).filter(
                 MatchedParkingSpaceList.user_id == user_id
             ).all()
@@ -57,12 +57,15 @@ class MatchedParkingList(object):
         :param str plate:
         :param string status:
         """
-        with create_session as session:
+
+        with create_session() as session:
             matched_parking_list = session.query(MatchedParkingSpaceList).filter(
                 MatchedParkingSpaceList.user_id == user_id and
                 MatchedParkingSpaceList.plate == plate
             ).one()
             matched_parking_list.status = status
+            entity = MatchedParkingSpaceMapper.to_entity(record=matched_parking_list)
+            raise Return(entity)
 
 
     @staticmethod
@@ -73,7 +76,8 @@ class MatchedParkingList(object):
         :param MatchedParkingSpace matched_parking_space:
         :return MatchedParkingSpace:
         """
-        with create_session as session:
+
+        with create_session() as session:
             matched_parking_space.validate()
             _matched_parking_space = MatchedParkingSpaceMapper.to_model(matched_parking_space)
             session.add(_matched_parking_space)
@@ -89,12 +93,13 @@ class MatchedParkingList(object):
         :param str plate:
         :return MatchedParkingSpace:
         """
-        with create_session as session:
-            row = session.query(MatchedParkingList).filter(
+        with create_session() as session:
+            matched_parking_space = session.query(MatchedParkingSpaceList).filter(
+                MatchedParkingSpaceList.plate == plate
+            ).one()
+            entity = MatchedParkingSpaceMapper.to_entity(matched_parking_space)
+            session.query(MatchedParkingSpaceList).filter(
                 MatchedParkingSpaceList.plate == plate
             ).delete()
-            if row == 0:
-                raise NoResultFound
-            entity = MatchedParkingSpaceMapper.to_entity(row)
-
             raise Return(entity)
+

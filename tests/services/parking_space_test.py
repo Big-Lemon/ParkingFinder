@@ -286,9 +286,6 @@ def test_handle_matching_status_with_time_expired_and_race_condition():
     _matched_parking_space = MatchedParkingSpace.get_mock_object(overrides={
         'plate': _plate
     })
-    _real_time_location = RealTimeLocation.get_mock_object(overrides={
-        'token': _matched_parking_space.plate
-    })
 
     expect(module.MatchedParkingList).read_one(
         plate=_plate
@@ -302,15 +299,15 @@ def test_handle_matching_status_with_time_expired_and_race_condition():
         plate=_matched_parking_space.plate
     ).once().and_return_future(None)
 
-    expect(module.RealTimeLocationService).fetch_real_time_location(
+    expect(module.ParkingLotRepository).read_one(
         plate=_matched_parking_space.plate
-    ).and_return_future(_real_time_location)
+    ).and_return_future(_parking_space)
 
     _result = yield module.ParkingSpaceService._handle_matching_status(
         parking_space=_parking_space
     )
 
-    assert _result == _real_time_location
+    assert _result == _parking_space
 
 
 @pytest.mark.gen_test
