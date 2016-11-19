@@ -35,9 +35,9 @@ class ParkingSpaceMapper(Mapper):
         }
 
         if entity.location.level:
-            params.update({'level': entity.level})
+            params.update({'level': entity.location.level})
         if entity.location.location:
-            params.update({'location': entity.location})
+            params.update({'location': entity.location.location})
 
         return params
 

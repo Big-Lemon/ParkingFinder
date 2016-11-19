@@ -60,6 +60,5 @@ class ParkingLotRepository(object):
             ).delete()
             if row == 0:
                 raise NoResultFound
-            entity = ParkingSpaceMapper.to_entity(row)
 
-            raise Return(entity)
+            raise Return(row)
