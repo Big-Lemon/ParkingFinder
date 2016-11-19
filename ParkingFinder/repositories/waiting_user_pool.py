@@ -63,7 +63,7 @@ class WaitingUserPool(object):
 
     @classmethod
     @coroutine
-    def pop_one(cls, longitude, latitude, location, ignore_user_ids=None, _ranking=None):
+    def pop_one(cls, longitude, latitude, ignore_user_ids=None, _ranking=None):
         """
         This method will
             1. read len(ignore_user_ids) +1 active users
@@ -74,7 +74,6 @@ class WaitingUserPool(object):
 
         :param float longitude:
         :param float latitude:
-        :param float location:
         :param list<string> ignore_user_ids: list of user_id that want to be filtered out
         :param func _ranking: ranking algorithm
         :return WaitingUser:

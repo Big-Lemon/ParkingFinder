@@ -64,6 +64,13 @@ data = [
         'color': 'yellow',
         'year': 2000,
     },
+    {
+        'plate': '6DAY434',
+        'brand': 'Nissan',
+        'model': 'Sentra',
+        'color': 'white',
+        'year': 2008,
+    },
 ]
 
 

@@ -31,11 +31,11 @@ def test_read_many_with_multiple_result():
     for matched_parking_space in matched_parking_space_list:
         matched_parking_space.validate()
     assert len(matched_parking_space_list) == 2
-    matched_parking_space_list.sort()
+    matched_parking_space_list.sort(key=lambda x: x.user_id)
     entity1 = yield module.MatchedParkingList.read_one('ANRCHST')
     entity2 = yield module.MatchedParkingList.read_one('4JTY881')
     expected_list = [entity1, entity2]
-    expected_list.sort()
+    expected_list.sort(key=lambda x: x.user_id)
     assert matched_parking_space_list == expected_list
 
 
@@ -54,43 +54,44 @@ def test_read_many_with_one_result():
 
 @pytest.mark.gen_test
 def test_read_many_with_no_result():
-    matched_parking_space_list = yield module.MatchedParkingList.read_many('valid_account_1')
-    for matched_parking_space in matched_parking_space_list:
-        matched_parking_space.validate()
-    assert len(matched_parking_space_list) == 1
-    matched_parking_space_list.sort()
-    entity = yield module.MatchedParkingList.read_one('6TRJ224')
-    expected_list = [entity]
-    expected_list.sort()
-    assert matched_parking_space_list == expected_list
+    expect(module.MatchedParkingSpaceMapper).to_entity.never()
+    matched_parking_space_list = yield module.MatchedParkingList.read_many('TANG')
+    assert len(matched_parking_space_list) == 0
 
-#
-# @pytest.mark.gen_test
-# def test_upsert():
-#     mocked_user = User.get_mock_object(overrides={
-#         "activated_vehicle": None
-#     })
-#
-#     user = yield module.UserRepository.upsert(user=mocked_user)
-#     _user = yield module.UserRepository.read_one(user_id=mocked_user.user_id)
-#     assert user == _user
-#
-#     user.activated_vehicle = '1234567'
-#     yield module.UserRepository.upsert(user)
-#     user = yield module.UserRepository.read_one(user_id=user.user_id)
-#     assert user.activated_vehicle == '1234567'
-#
-#
-# @pytest.mark.gen_test
-# def test_upsert_with_incomplete_entity():
-#     mocked_user = User({'user_id': '123'})
-#     # missing name
-#     with pytest.raises(ValidationError):
-#         yield module.UserRepository.upsert(user=mocked_user)
-#
-#
-# @pytest.mark.gen_test
-# def test_insert():
-#     mocked_user = User.get_mock_object()
-#     user = yield module.UserRepository._insert(user=mocked_user)
-#     assert mocked_user == user
+
+@pytest.mark.gen_test
+def test_update():
+    matched_parking_space = yield module.MatchedParkingList.update('valid_account', '6ELA725', 'rejected')
+    assert matched_parking_space.status == 'rejected'
+    _matched_parking_space = yield module.MatchedParkingList.read_one('6ELA725')
+    assert matched_parking_space == _matched_parking_space
+
+@pytest.mark.gen_test
+def test_insert():
+    mocked_space = MatchedParkingSpace.get_mock_object(overrides={
+        'user_id': 'expired_account',
+        'plate': '6DAY434',
+        'status': 'awaiting',
+    })
+    matched_parking_space = yield module.MatchedParkingList.insert(mocked_space)
+    _matched_parking_space = yield module.MatchedParkingList.read_one(plate=mocked_space.plate)
+    del matched_parking_space['created_at'], _matched_parking_space['created_at']
+    assert matched_parking_space == _matched_parking_space
+
+
+@pytest.mark.gen_test
+def test_remove():
+    matched_parking_space = yield module.MatchedParkingList.read_one(plate='6DAY434')
+    _matched_parking_space = yield module.MatchedParkingList.remove(plate='6DAY434')
+    del matched_parking_space['created_at'], _matched_parking_space['created_at']
+    assert matched_parking_space == _matched_parking_space
+    expect(module.MatchedParkingSpaceMapper).to_entity.never()
+    with pytest.raises(NoResultFound):
+        yield module.MatchedParkingList.read_one(plate='6DAY434')
+
+
+@pytest.mark.gen_test
+def test_remove_with_no_result():
+    expect(module.MatchedParkingSpaceMapper).to_entity.never()
+    with pytest.raises(NoResultFound):
+        yield module.MatchedParkingList.remove(plate='6DAY434')

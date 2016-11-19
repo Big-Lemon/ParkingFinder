@@ -32,7 +32,6 @@ class MatchedParkingList(object):
         """
         Read many and only return list<MatchedParkingSpace>
         :param str user_id:
-        :raise: NoResultFound:
         :return list<MatchedParkingSpace>:
         """
         with create_session() as session:
@@ -92,11 +91,12 @@ class MatchedParkingList(object):
         :return MatchedParkingSpace:
         """
         with create_session() as session:
-            row = session.query(MatchedParkingList).filter(
+            matched_parking_space = session.query(MatchedParkingSpaceList).filter(
+                MatchedParkingSpaceList.plate == plate
+            ).one()
+            entity = MatchedParkingSpaceMapper.to_entity(matched_parking_space)
+            session.query(MatchedParkingSpaceList).filter(
                 MatchedParkingSpaceList.plate == plate
             ).delete()
-            if row == 0:
-                raise NoResultFound
-            entity = MatchedParkingSpaceMapper.to_entity(row)
             raise Return(entity)
 
