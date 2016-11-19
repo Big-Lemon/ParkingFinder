@@ -1,11 +1,12 @@
 from clay import config
 from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
+from math import sqrt
 
 from ParkingFinder.base.async_db import create_session
 from ParkingFinder.base.errors import NotFound
 from ParkingFinder.mappers.waiting_user_mapper import WaitingUserMapper
-from ParkingFinder.tables.waiting_user import WaitingUsers
+from ParkingFinder.tables.waiting_users import WaitingUsers
 
 
 class WaitingUserPool(object):
@@ -86,28 +87,31 @@ class WaitingUserPool(object):
         :return WaitingUser:
         :raises NoResultFound: no waiting user in given coordinate
         """
-        assert (longitude and latitude) or location
-        radius = config.get('matching.radius')
+        assert (longitude and latitude)
+        #radius = config.get('matching.radius')
+        radius = 0;
         square_radius = radius * radius
         _ignore_user_ids = set(ignore_user_ids or [])
 
         with create_session() as session:
             _waiting_users = session.query(WaitingUsers).filter(
-                (WaitingUsers.location == location or
-                    (
-                        ((WaitingUsers.longitude - longitude) * (WaitingUsers.longitude - longitude)
-                         + (WaitingUsers.latitude + latitude) * (WaitingUsers.latitude - latitude))
-                        < square_radius
-                    )
-                ) and WaitingUsers.is_active
-            ).limit(len(_ignore_user_ids) + 1)
+                WaitingUsers.is_active
+            ).all()
+            total = (len(_ignore_user_ids) + 2)
+
 
             sorted(_ignore_user_ids)
-            if _waiting_users == None
+            if _waiting_users == None:
                 raise NoResultFound
-            sorted(_waiting_users)
+
+            #sorted by distance
+            _waiting_users = sorted(_waiting_users, key=lambda e: cls.distance(e, longitude, latitude))
+            
             for user in _waiting_users:
                 if user.user_id not in _ignore_user_ids:
+                    user.is_active = False
+                raise Return(user)
 
-                    user.is_active = False;
-                   raise Return(user)
+    @staticmethod
+    def distance(waiting_users, longitude, latitude):
+        return sqrt((float(waiting_users.longitude) - longitude)**2 + (float(waiting_users.latitude) - latitude)**2)

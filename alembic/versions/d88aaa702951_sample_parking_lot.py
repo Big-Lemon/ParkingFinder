@@ -58,4 +58,9 @@ def upgrade():
 
 
 def downgrade():
-    pass
+    for row in data:
+        op.execute(
+            parking_lot_table.delete().where(
+                parking_lot_table.plate == row['plate']
+            )
+        )

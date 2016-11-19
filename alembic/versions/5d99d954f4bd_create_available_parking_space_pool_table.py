@@ -19,8 +19,8 @@ def upgrade():
     op.create_table(
         'available_parking_space_pool',
         sa.Column('plate', sa.String(7), sa.ForeignKey('vehicles.plate'), primary_key=True),
-        sa.Column('latitude', sa.Float, nullable=False),
-        sa.Column('longitude', sa.Float, nullable=False),
+        sa.Column('latitude', sa.DECIMAL(precision=32, scale=6), nullable=False),
+        sa.Column('longitude', sa.DECIMAL(precision=32, scale=6), nullable=False),
         sa.Column('location', sa.String(255), nullable=True),
         sa.Column('level', sa.Integer, nullable=True),
         sa.Column('is_active', sa.Boolean, nullable=False, default=False),
