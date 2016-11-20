@@ -6,6 +6,9 @@ from clay import config
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine.url import URL
 
+import redis
+from clay import config
+
 
 meta = config.get('database')
 
@@ -13,6 +16,15 @@ url_meta = deepcopy(meta)
 del url_meta['database']
 url = URL(**url_meta)
 engine = create_engine(url)
+
+
+def flush_redis():
+    port = config.get('redis.port')
+    host = config.get('redis.host')
+    db = config.get('redis.db')
+
+    _redis = redis.StrictRedis(host=host, port=port, db=db)
+    _redis.flushall()
 
 
 def create_db():
@@ -45,5 +57,7 @@ if __name__ == '__main__':
                 create_db()
             elif command == 'drop':
                 drop_db()
+            elif command == 'flush_redis':
+                flush_redis()
             else:
                 print 'Usage: python database.py [create|drop]'

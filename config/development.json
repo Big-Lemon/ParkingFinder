@@ -11,10 +11,23 @@
 		"password": "development",
 		"database": "dev"
 	},
+	"redis": {
+		"port": "6379",
+		"host": "localhost",
+		"db": 0
+	},
 	"matching": {
 		"matching_duration": 5,
 		"matching_repeat_count": 10,
 		"awaiting_action_timeout": 15,
-		"awaiting_action_duration": 1
+		"awaiting_action_duration": 1,
+		"num_display_parking_spaces": 10,
+		"num_pop_parking_spaces": 1,
+		"radius": 500,
+		"unit": "m"
+	},
+	"available_parking": {
+		"waiting_duration": 15,
+		"unit": "sec"
 	}
 }

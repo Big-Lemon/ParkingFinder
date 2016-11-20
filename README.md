@@ -62,9 +62,18 @@ dependencies are installed in environment
     make downgrade_db
 ```
 
-# Run Tests
+## Run Tests
 ```
     CLAY_CONFIG='config/test.json' make test
+```
+
+Run Redis Server
+```
+    # start redis service
+    redis_server
+
+    # redis command tool
+    redis_cli
 ```
 
 ## Serve
