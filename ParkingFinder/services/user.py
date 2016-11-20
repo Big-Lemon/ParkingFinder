@@ -105,6 +105,7 @@ class UserService(object):
         :return: Vehicle vehicle: inserted vehicle
         """
 
+        _vehicle = None
         try:
             vehicle.validate()
             user = yield UserRepository.read_one(user_id)
@@ -157,7 +158,7 @@ class UserService(object):
 
         :param String user_id: user's id
         :param String vehicle_plate: the plate of vehicle to be activated
-        :raise: NotFound: user doesn't exist
+        :raise: NotFound: user doesn't exist or the vehicle with vehicle_plate doesn't belong to user
         :return: User user: updated user entity
         """
         try:
@@ -172,7 +173,8 @@ class UserService(object):
                 user.activated_vehicle = vehicle_plate
                 _user = yield UserRepository.upsert(user=user)
             else:
-                _user = user
+                raise NotFound
+
         except NoResultFound:
             raise NotFound
 

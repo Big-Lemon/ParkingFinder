@@ -65,10 +65,3 @@ def with_repeat(timeout=None, repeat_times=None, repeat_exceptions=None, duratio
         return wrapper
 
     return decorator
-
-
-class Timeout(BaseError):
-    """
-    Timeout Exception
-    """
-    error = "Timeout Exception"

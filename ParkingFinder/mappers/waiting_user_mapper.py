@@ -1,4 +1,3 @@
-from ParkingFinder.entities.entity import Entity
 from ParkingFinder.mappers import Mapper
 from ParkingFinder.entities.waiting_user import WaitingUser
 from ParkingFinder.tables.waiting_users import WaitingUsers

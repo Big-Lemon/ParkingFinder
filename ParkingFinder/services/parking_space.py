@@ -25,8 +25,7 @@ from clay import config
 from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return, sleep
 
-from ParkingFinder.base.errors import BaseError, NotFound
-from ParkingFinder.base.with_repeat import Timeout
+from ParkingFinder.base.errors import BaseError, NotFound, Timeout
 from ParkingFinder.base.with_repeat import with_repeat
 from ParkingFinder.entities.matched_parking_space import MatchedParkingSpace
 from ParkingFinder.entities.available_parking_space import AvailableParkingSpace
@@ -72,7 +71,7 @@ class ParkingSpaceService(object):
         Return a real time loc token with location of the other user if
         matching successfully, otherwise throw exception after timeout
         :param str plate: plate of the vehicle in the parking space
-        :return RealTimeLocation: real time token with location of the matched waiting user
+        :return parking_space: parking_space
         :raises Timeout: timeout, user can send post request again to continue listening the status
         :raises NotFound: the vehicle with given plate have not been checked in yet
         """

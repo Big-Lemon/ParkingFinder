@@ -3,24 +3,24 @@ from tornado.web import Application
 from ParkingFinder.handlers import HealthHandler
 from ParkingFinder.handlers import FacebookGraphLoginHandler
 from ParkingFinder.handlers.user_information import UserInformationHandler
-from ParkingFinder.handlers.near_by_checking import (
-    ParkingSpaceNearbyFetchHandler,
-)
 from ParkingFinder.handlers.parking_space import (
     PostParkingSpaceHandler,
     ReserveParkingSpaceHandler,
-    RejectParkingSpaceHandler
+    RejectParkingSpaceHandler,
+    ParkingLotHandler
 )
 
 app = Application([
+    (r'/', HealthHandler),
     (r'/health', HealthHandler),
     (r'/auth/facebook', FacebookGraphLoginHandler),
     (r'/user/(.*)', UserInformationHandler),
+    (r'/parkingSpace/post/(.*)', PostParkingSpaceHandler),
     (r'/parkingSpace/reserve/(.*)', ReserveParkingSpaceHandler),
     (r'/parkingSpace/reject/(.*)', RejectParkingSpaceHandler),
-    (r'/parkingSpace/nearby/(.*)', ParkingSpaceNearbyFetchHandler),
+    (r'/parkingSpace/checkout/(.*)', ParkingLotHandler),
+    (r'/parkingSpace/checkin/(.*)', ParkingLotHandler),
     (r'/user/logout', FacebookGraphLoginHandler),
-    (r'/parkingSpace/post/(.*)', PostParkingSpaceHandler),
 ])
 
 """

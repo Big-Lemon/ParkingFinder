@@ -31,11 +31,20 @@ class AvailableParkingSpaceMapper(Mapper):
             params.update({'is_active': False})
         return params
 
-
     @staticmethod
     def _to_record(entity):
-        return entity.to_primitive()
+        params = {
+            'plate': entity.plate,
+            'latitude': entity.location.latitude,
+            'longitude': entity.location.longitude,
+        }
 
+        if entity.location.level:
+            params.update({'level': entity.location.level})
+        if entity.location.location:
+            params.update({'address': entity.location.location})
+
+        return params
 
     @classmethod
     def _to_model(cls, entity):

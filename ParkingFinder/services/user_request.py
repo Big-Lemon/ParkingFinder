@@ -4,7 +4,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
 
 from ParkingFinder.base.errors import BaseError, NotFound, InvalidEntity, InvalidArguments
-from ParkingFinder.base.with_repeat import Timeout
+from ParkingFinder.base.errors import Timeout
 from ParkingFinder.base.with_repeat import with_repeat
 from ParkingFinder.repositories import (
     AvailableParkingSpacePool,
@@ -104,7 +104,7 @@ class UserRequestService(object):
         :raise: InvalidEntity: this means information among tables is not consistent
                                 possibly internal error
         :raise: UserTerminatedInTheHalfWay: this means user terminate the service in the half way
-        :return: Token: the real_time token
+        :return: ParkingSpace: matched parking space
         """
 
         try:
@@ -114,38 +114,37 @@ class UserRequestService(object):
             # ipdb.set_trace()
             for matched_result in list_of_matching_space:
                 if accepted_space_plate != matched_result.plate:
-                    modified_row = yield MatchedParkingList.update(user_id=user_id,
-                                                                   plate=matched_result.plate,
-                                                                   status='rejected')
-                    if modified_row == 0:
-                        raise InvalidEntity
+                    _status = 'rejected'
                 elif matched_result.is_expired:
-                    modified_row = yield MatchedParkingList.update(usr_id=user_id,
-                                                                   plate=matched_result.plate,
-                                                                   status='expired')
-                    if modified_row == 0:
-                        raise InvalidEntity
+                    _status = 'expired'
                     raise Timeout
                 else:
-                    modified_row = yield MatchedParkingList.update(user_id=user_id,
-                                                                   plate=matched_result.plate,
-                                                                   status='reserved')
-                    if modified_row == 0:
-                        raise InvalidEntity
+                    _status = 'reserved'
+
+                modified_row = yield MatchedParkingList.update(
+                    user_id=user_id,
+                    plate=matched_result.plate,
+                    status=_status
+                )
+                if modified_row == 0:
+                    raise InvalidEntity
+                elif _status == 'expired':
+                    raise Timeout
 
             removed = yield WaitingUserPool.remove(user_id=user_id)
             # case where user is not valid so we should mark that space as reject
             # and not return the token
             if not removed:
-                modified_row = yield MatchedParkingList.update(user_id=user_id,
-                                                               plate=accepted_space_plate,
-                                                               status='rejected')
+                yield MatchedParkingList.update(
+                    user_id=user_id,
+                    plate=accepted_space_plate,
+                    status='rejected'
+                )
                 raise UserTerminatedInTheHalfWay
             else:
-                real_time_location = yield RealTimeLocationService.fetch_real_time_location(
-                    token=accepted_space_plate
-                )
-                raise Return(real_time_location)
+                parking_space = yield ParkingLotRepository.read_one(plate=accepted_space_plate)
+                raise Return(parking_space)
+
         except NoResultFound:
             raise Timeout
 

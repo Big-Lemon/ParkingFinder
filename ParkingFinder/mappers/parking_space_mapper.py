@@ -29,7 +29,7 @@ class ParkingSpaceMapper(Mapper):
     def _to_record(entity):
 
         params = {
-            'token:': entity.plate,
+            'plate': entity.plate,
             'latitude': entity.location.latitude,
             'longitude': entity.location.longitude,
         }
@@ -37,7 +37,7 @@ class ParkingSpaceMapper(Mapper):
         if entity.location.level:
             params.update({'level': entity.location.level})
         if entity.location.location:
-            params.update({'location': entity.location.location})
+            params.update({'address': entity.location.location})
 
         return params
 

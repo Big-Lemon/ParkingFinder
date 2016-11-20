@@ -17,4 +17,4 @@ class Location(Entity):
 
     # non-required variables
     location = StringType(min_length=1, max_length=255, required=False)
-    level = IntType(required=False)
+    level = IntType(min_value=1, required=False)

@@ -7,7 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from tornado.auth import FacebookGraphMixin
 from tornado.gen import coroutine
 
-from ParkingFinder.base.errors import NotFound
+from ParkingFinder.base.errors import NotFound, InvalidArguments, with_exception_handler
 from ParkingFinder.entities.access_token import AccessToken
 from ParkingFinder.entities.user import User
 from ParkingFinder.handlers.handler import BaseHandler
@@ -150,6 +150,7 @@ class FacebookGraphLoginHandler(BaseHandler, FacebookGraphMixin):
                     'error': 'Facebook Gateway Error'
                 })
 
+    @with_exception_handler
     @coroutine
     def post(self):
         """
@@ -161,26 +162,15 @@ class FacebookGraphLoginHandler(BaseHandler, FacebookGraphMixin):
         :return:
         """
         payload = json.loads(self.request.body)
-        access_token = self.get_argument("access_token", False)
+        access_token = self.get_argument("access_token", payload.get('access_token', None))
 
-        if not access_token:
-            access_token = payload.get('access_token', False)
-
-        if not access_token:
-            self.set_status(httplib.BAD_REQUEST)
-            self.write({
-                'error': 'Access Token Required',
-            })
         try:
+            if not access_token:
+                raise InvalidArguments
+
             yield AccessTokenRepository.remove(
                 access_token=access_token
             )
             self.set_status(httplib.OK)
         except NoResultFound:
-            self.set_status(httplib.BAD_REQUEST)
-            self.write({
-                'error': 'Not Found',
-                'payload': {
-                    'access_token': access_token
-                }
-            })
+            raise NotFound
