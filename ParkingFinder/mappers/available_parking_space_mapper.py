@@ -1,34 +1,44 @@
+from datetime import datetime, timedelta
+
+from clay import config
+
 from ParkingFinder.entities.entity import Entity
 from ParkingFinder.mappers import Mapper
 from ParkingFinder.entities.available_parking_space import AvailableParkingSpace
 from ParkingFinder.tables.available_parking_space_pool import AvailableParkingSpacePool
+
+WAITING_TIME = config.get('available_parking.waiting_duration')
+
 
 class AvailableParkingSpaceMapper(Mapper):
     _ENTITY = AvailableParkingSpace
     _MODEL = AvailableParkingSpacePool
 
     @staticmethod
-    def _build_map(record):
+    def _build_map(record, *args, **params):
+        assert record.get('is_active', None)
+
         location = {
-            'longitude': record.longitude,
-            'latitude': record.latitude,
+            'longitude': record['longitude'],
+            'latitude': record['latitude'],
         }
-        if record.level:
-            location.update({'level': record.level})
-        if record.location:
-            location.update({'location': record.location})
+        address = record.get('address', None)
+        level = record.get('level', None)
+
+        if address:
+            location['location'] = address
+        if level:
+            location['level'] = level
+
+
 
         params = {
-            'plate': record.plate,
+            'plate': record['plate'],
             'location': location,
-            'created_at': record.created_at,
-            'updated_at': record.updated_at,
+            'is_active': record['is_active'],
+            'expired_at': record['expired_at'],
+            'distance': record.get('distance', None)
         }
-        print record.is_active
-        if record.is_active == 1:
-            params.update({'is_active': True})
-        else:
-            params.update({'is_active': False})
         return params
 
     @staticmethod
@@ -37,12 +47,12 @@ class AvailableParkingSpaceMapper(Mapper):
             'plate': entity.plate,
             'latitude': entity.location.latitude,
             'longitude': entity.location.longitude,
+            'expired_at': str(entity.expired_at)
         }
-
-        if entity.location.level:
-            params.update({'level': entity.location.level})
         if entity.location.location:
-            params.update({'address': entity.location.location})
+            params['address'] = entity.location.location
+        if entity.location.level:
+            params['level'] = entity.location.level
 
         return params
 

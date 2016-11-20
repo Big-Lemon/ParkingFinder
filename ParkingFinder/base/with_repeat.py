@@ -7,7 +7,7 @@ from tornado.gen import (
     sleep
 )
 
-from ParkingFinder.base.errors import BaseError
+from ParkingFinder.base.errors import BaseError, Timeout
 
 
 def with_repeat(timeout=None, repeat_times=None, repeat_exceptions=None, duration=None):

@@ -144,13 +144,15 @@ def test_accept_parking_space_when_user_terminate():
         overrides={
             'user_id': _user_id,
             'plate': '1234567',
-            'status': 'awaiting'
+            'status': 'awaiting',
+            'created_at': datetime.datetime.utcnow() + datetime.timedelta(0, 50)
         })
     _rejected_space = MatchedParkingSpace.get_mock_object(
         overrides={
             'user_id': _user_id,
             'plate': '7777333',
-            'status': 'awaiting'
+            'status': 'awaiting',
+            'created_at': datetime.datetime.utcnow() + datetime.timedelta(0, 50)
         })
     _list_of_space = [_accepted_space, _rejected_space]
     expect(module.MatchedParkingList).read_many(
@@ -160,14 +162,11 @@ def test_accept_parking_space_when_user_terminate():
     expect(module.MatchedParkingList).update.and_return_future(1)
 
     expect(module.WaitingUserPool).remove(user_id=_user_id).and_return_future(None)
-    expect(module.MatchedParkingList).update(
-        user_id=_user_id,
-        plate=_list_of_space[0].plate,
-        status='rejected', ).and_return_future(1)
     with pytest.raises(module.InvalidArguments):
         yield module.UserRequestService.accept_parking_space(
             user_id=_user_id,
             accepted_space_plate=_accept_plate)
+
 
 @pytest.mark.gen_test
 # TODO:good

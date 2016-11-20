@@ -1,17 +1,13 @@
-# coding=utf-8
+import redis as _redis
 from clay import config
 from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
-from math import sqrt
-from math import radians
-from math import sin
-from math import cos
-from math import atan2
 
-from ParkingFinder.base.async_db import create_session
-from ParkingFinder.base.errors import NotFound
+from ParkingFinder.base.redis_pool import redis_pool
 from ParkingFinder.mappers.waiting_user_mapper import WaitingUserMapper
-from ParkingFinder.tables.waiting_users import WaitingUsers
+
+WAITING_USER = 'waiting_user:'
+COORDINATE = 'active_waiting_user:'
 
 
 class WaitingUserPool(object):
@@ -24,12 +20,20 @@ class WaitingUserPool(object):
         :return: WaitingUser
         :raise NoResultFound: user is not in the pool
         """
-        with create_session() as session:
-            WaitingUser = session.query(WaitingUsers).filter(
-                WaitingUsers.user_id == user_id
-            ).one()
-            entity = WaitingUserMapper.to_entity(record=user_id)
+        assert user_id
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        try:
+            record = redis.hgetall(WAITING_USER + user_id)
+            try:
+                redis.geopos(COORDINATE, user_id)
+                record['is_active'] = True
+            except TypeError:
+                record['is_active'] = False
+
+            entity = WaitingUserMapper.to_entity(record=record)
             raise Return(entity)
+        except TypeError:
+            raise NoResultFound
 
     @classmethod
     @coroutine
@@ -41,7 +45,7 @@ class WaitingUserPool(object):
 
         :return:
         """
-        pass
+        raise NotImplemented
 
     @classmethod
     @coroutine
@@ -52,31 +56,66 @@ class WaitingUserPool(object):
         :param WaitingUser waiting_user:
         :return:
         """
-        with create_session() as session:
-            waiting_user.validate()
-            _waiting_user = WaitingUserMapper.to_model(waiting_user)
-            session.add(_waiting_user)
-            raise Return(waiting_user)
+        waiting_user.validate()
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        if waiting_user.is_active:
+            redis.geoadd(
+                COORDINATE,
+                waiting_user.location.longitude,
+                waiting_user.location.latitude,
+                waiting_user.user_id
+            )
+        redis.hmset(
+            WAITING_USER + waiting_user.user_id,
+            WaitingUserMapper.to_record(entity=waiting_user)
+        )
+        raise Return(waiting_user)
 
     @classmethod
     @coroutine
-    def update(cls, user_id, is_active):
+    def update(cls, user_id, is_active, location=None):
         """
         Update the status(is_active) of the user with given user_id
 
         :return WaitingUser:
         :param user_id:
         :param is_active:
+        :param location:
         :return:
         :raises NoResultFound: use is not in the pool
         """
-        with create_session() as session:
-            waiting_user = session.query(WaitingUsers).filter(
-                WaitingUsers.user_id == user_id
-            ).one()
-            waiting_user.is_active = is_active
-            entity = WaitingUserMapper.to_entity(record=waiting_user)
-            raise Return(entity)
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        if location:
+            location.validate()
+            redis.hmset(
+                WAITING_USER + user_id,
+                {
+                    'latitude': location.latitude,
+                    'longitude': location.longitude,
+                }
+            )
+        try:
+            if is_active:
+                _latitude = redis.hget(
+                    WAITING_USER + user_id,
+                    'latitude'
+                )
+                _longitude = redis.hget(
+                    WAITING_USER + user_id,
+                    'longitude'
+                )
+                redis.geoadd(
+                    COORDINATE,
+                    _longitude,
+                    _latitude,
+                    user_id
+                )
+            else:
+                redis.zrem(COORDINATE, user_id)
+            waiting_user = yield cls.read_one(user_id=user_id)
+            raise Return(waiting_user)
+        except TypeError:
+            raise NoResultFound
 
     @classmethod
     @coroutine
@@ -84,10 +123,15 @@ class WaitingUserPool(object):
         """
         remove a user row from a user waitting pool
         :param user_id:
-        :return:
+        :return WaitingUser:
+        :raise NoResultFound:
         """
-
-        pass
+        waiting_user = cls.read_one(user_id=user_id)
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        pipeline = redis.pipeline()
+        pipeline.zrem(WAITING_USER, user_id)
+        pipeline.delete(WAITING_USER + user_id)
+        raise Return(waiting_user)
 
     @classmethod
     @coroutine
@@ -108,51 +152,26 @@ class WaitingUserPool(object):
         :raises NoResultFound: no waiting user in given coordinate
         """
         assert (longitude and latitude)
-        #radius = config.get('matching.radius')
-        radius = 0;
-        square_radius = radius * radius
+        radius = config.get('matching.radius')
+        unit = config.get('matching.unit')
         _ignore_user_ids = set(ignore_user_ids or [])
 
-        with create_session() as session:
-            _waiting_users = session.query(WaitingUsers).filter(
-                WaitingUsers.is_active
-            ).all()
-            total = (len(_ignore_user_ids) + 2)
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        pipeline = redis.pipeline()
+        waiting_users = pipeline.georadius(
+            name=COORDINATE,
+            longitude=latitude,
+            latitude=latitude,
+            radius=radius,
+            unit=unit,
+            sort='ASC'
+        )
 
-
-            _ignore_user_ids = sorted(_ignore_user_ids)
-            if _waiting_users == None:
-                raise NoResultFound
-
-            #sorted by distance
-            _waiting_users = sorted(_waiting_users, key=lambda u: cls._distance(u, longitude, latitude))
-            
-            for user in _waiting_users:
-                if user.user_id not in _ignore_user_ids:
-                    user.is_active = False
-                raise Return(user)
-
-    @staticmethod
-    def _distance(waiting_user, longitude, latitude):
-        """
-        This function will
-            use the ‘haversine’ formula to calculate the great-circle distance between
-            two points – that is, the shortest distance over the earth’s surface – giving an
-            ‘as-the-crow-flies’ distance between the points).
-        :param waiting_user:
-        :param longitude:
-        :param latitude:
-        :return: float distance(unit: m)
-        """
-        EARTH_RADIUS = 6371000
-        phi1 = radians(waiting_user.location.latitude)
-        phi2 = radians(latitude)
-        delta_phi = radians(latitude - waiting_user.location.latitude)
-        delta_lambda = radians(longitude - waiting_user.location.longitude)
-        a = sin(delta_phi/2) * sin(delta_phi/2) + \
-            cos(phi1) * cos(phi2) + \
-            sin(delta_lambda/2) * sin(delta_lambda/2)
-        c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        dist = EARTH_RADIUS * c
-        return dist
-
+        for user in waiting_users:
+            if user[0] not in _ignore_user_ids:
+                record = redis.hgetall(WAITING_USER + user[0])
+                pipeline.zrem(COORDINATE, record[0])
+                record['is_active'] = False
+                entity = WaitingUserMapper.to_entity(record)
+                raise Return(entity)
+        raise NoResultFound

@@ -1,11 +1,15 @@
+import redis as _redis
 from clay import config
 from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
 
-from ParkingFinder.base.async_db import create_session
-from ParkingFinder.base.errors import NotFound
+from ParkingFinder.base.redis_pool import redis_pool
+from ParkingFinder.entities.available_parking_space import AvailableParkingSpace
 from ParkingFinder.mappers.available_parking_space_mapper import AvailableParkingSpaceMapper
-from ParkingFinder.tables.available_parking_space_pool import AvailableParkingSpacePool as Pool
+
+
+AVAILABLE_PARKING = 'available_parking:'
+COORDINATE = 'active_parking_coordinate:'
 
 
 class AvailableParkingSpacePool(object):
@@ -20,12 +24,20 @@ class AvailableParkingSpacePool(object):
         :return AvailableParkingSpace:
         :raises NoResultFound: the vehicle with given plate hasn't been posted yet
         """
-        with create_session() as session:
-            parking_space = session.query(Pool).filter(
-                Pool.plate == plate
-            ).one()
-            entity = AvailableParkingSpaceMapper.to_entity(record=parking_space)
-            raise Return(entity)
+        assert plate
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        try:
+            parking = redis.hgetall(AVAILABLE_PARKING + plate)
+            try:
+                redis.geopos(COORDINATE, plate)
+                parking['is_active'] = True
+            except TypeError:
+                parking['is_active'] = False
+
+            available_parking_space = AvailableParkingSpaceMapper.to_entity(parking)
+            raise Return(available_parking_space)
+        except TypeError:
+            raise NoResultFound
 
     @classmethod
     @coroutine
@@ -50,24 +62,27 @@ class AvailableParkingSpacePool(object):
         """
         assert (longitude and latitude) or location
         radius = config.get('matching.radius')
-        square_radius = radius * radius
+        unit = config.get('matching.unit')
 
-        n = config.get('matching.num_display_parking_spaces')
-        with create_session() as session:
-            parking_spaces = session.query(Pool).filter(
-                Pool.location == location and
-                Pool.is_active
-            ).all()
-            parking_spaces = sorted(parking_spaces, key=lambda p: cls._distance(
-                parking_space=p,
-                longitude=longitude,
-                latitude=latitude,
-            ))
-            _parking_spaces = [AvailableParkingSpaceMapper.to_entity(parking_space)
-                              for parking_space in parking_spaces[0:n]]
-            raise Return(_parking_spaces)
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        available_parkings = redis.georadius(
+            name=COORDINATE,
+            longitude=longitude,
+            latitude=latitude,
+            radius=radius,
+            unit=unit,
+            withcoord=True,
+            sort='ASC'
+        )
+        _entities = []
+        for parking_space in available_parkings:
+            record = redis.hgetall(AVAILABLE_PARKING + parking_space[0])
+            record['is_active'] = True
+            entity = AvailableParkingSpaceMapper.to_entity(record)
+            entity.distance = parking_space[1]
+            _entities.append(entity)
 
-
+        raise Return(_entities)
 
     @classmethod
     @coroutine
@@ -78,12 +93,20 @@ class AvailableParkingSpacePool(object):
         :param AvailableParkingSpace available_parking_space:
         :return AvailableParkingSpace:
         """
-        with create_session() as session:
-            #available_parking_space.validate()
-            _available_parking_space = AvailableParkingSpaceMapper.to_model(available_parking_space)
-            session.add(_available_parking_space)
-            raise Return(available_parking_space)
-        pass
+        available_parking_space.validate()
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        if available_parking_space.is_active:
+            redis.geoadd(
+                COORDINATE,
+                available_parking_space.location.longitude,
+                available_parking_space.loaction.latitude,
+                available_parking_space.plate,
+            )
+        redis.hmset(
+            AVAILABLE_PARKING + available_parking_space.plate,
+            AvailableParkingSpaceMapper.to_record(entity=available_parking_space)
+            )
+        raise Return(available_parking_space)
 
     @classmethod
     @coroutine
@@ -94,7 +117,26 @@ class AvailableParkingSpacePool(object):
         :param boolean is_active:
         :return AvailableParkingSpace:
         """
-        pass
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        if is_active:
+            latitude = redis.hget(
+                AVAILABLE_PARKING + plate,
+                'latitude'
+            )
+            longitude = redis.hget(
+                AVAILABLE_PARKING + plate,
+                'longitude'
+            )
+            redis.geoadd(
+                COORDINATE,
+                longitude,
+                latitude,
+                plate,
+            )
+        else:
+            redis.zrem(COORDINATE, plate)
+        parking = yield cls.read_one(plate=plate)
+        raise Return(parking)
 
     @classmethod
     @coroutine
@@ -103,8 +145,14 @@ class AvailableParkingSpacePool(object):
         Remove a available parking space by plate
         :param str plate:
         :return AvailableParkingSpace:
+        :raise NoResultFound:
         """
-        pass
+        parking = yield cls.read_one(plate=plate)
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        pipeline = redis.pipeline()
+        pipeline.zrem(COORDINATE, plate)
+        pipeline.delete(AVAILABLE_PARKING + plate)
+        raise Return(parking)
 
     @classmethod
     @coroutine
@@ -121,44 +169,39 @@ class AvailableParkingSpacePool(object):
         :param float latitude:
         :param str location:
         :param func _filter:
+        :param list<str> ignore_list: list of plate want to be ignored
         :return list<AvailableParkingSpace>:
         """
-        assert (longitude and latitude) or location
+        assert (longitude and latitude)
         radius = config.get('matching.radius')
-        square_radius = radius * radius
+        unit = config.get('matching.unit')
         _ignore_list = set(ignore_list or [])
-        n = config.get('matching.num_display_parking_spaces')
 
-        with create_session() as session:
-            parking_spaces = session.query(Pool).filter(
-                Pool.location == location and 
-                Pool.is_active
-            ).all()
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        pipeline = redis.pipeline()
+        available_parkings = pipeline.georadius(
+            name=COORDINATE,
+            longitude=longitude,
+            latitude=latitude,
+            radius=radius,
+            unit=unit,
+            withdist=True,
+            sort='ASC'
+        )
+        n = config.get('matching.num_pop_parking_spaces')
 
-            parking_spaces=sorted(parking_spaces, key=lambda p: cls._distance(
-                parking_space=p,
-                longitude=longitude,
-                latitude=latitude,
-            ))
-            count = 0
-            _parking_spaces = []
-            for parking_space in parking_spaces:
-                if parking_space.plate not in _ignore_list:
-                    parking_space.is_active = False
-                    _parking_spaces.append(AvailableParkingSpaceMapper.to_entity(parking_space))
-                    count += 1
-                if count >= n:
-                    break
-            raise Return(_parking_spaces)
+        _entities = []
+        for parking_space in available_parkings:
+            if record[0] not in _ignore_list:
+                record = redis.hgetall(AVAILABLE_PARKING + parking_space[0])
+                # remove from active pool
+                pipeline.zrem(COORDINATE, record[0])
+                record['is_active'] = False
+                record['distance'] = parking_space[1]
+                entity = AvailableParkingSpaceMapper.to_entity(record)
+                _entities.append(entity)
+                n -= 1
+            if n <= 0:
+                break
+        raise Return(_entities)
 
-    @staticmethod
-    def _distance(parking_space, longitude, latitude):
-        pass
-
-    @staticmethod
-    def _is_in_range(longitude, latitude, parking_space):
-        r = config.get('matching.radius')
-        r = r * r
-        x = abs(longitude - parking_space.longitude)
-        y = abs(latitude- parking_space.latitude)
-        return x * x + y * y < r

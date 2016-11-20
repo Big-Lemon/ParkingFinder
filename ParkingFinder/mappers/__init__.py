@@ -31,7 +31,7 @@ class Mapper:
             raise NotImplementedError
 
     @classmethod
-    def to_entity(cls, record):
+    def to_entity(cls, record, *args, **params):
         """
         Map from sqlalchemy model to schematics entity
         This function will use _build_map to generate a json object that
@@ -42,12 +42,12 @@ class Mapper:
         :raises NotImplementedError: the mapper is called without
                 implementing abstract method `_build_map()`
         """
-        params = cls._build_map(record)
+        params = cls._build_map(record, *args, **params)
         return cls._ENTITY(params)
 
     @staticmethod
     @abstractmethod
-    def _build_map(record):
+    def _build_map(record, *args, **params):
         """
         Abstract method that is required to be implemented before using to_entity
 

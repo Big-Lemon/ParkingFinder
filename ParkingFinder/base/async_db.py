@@ -3,12 +3,11 @@ from tornado.gen import Return, coroutine
 
 from ParkingFinder.base import Session
 
-session = Session()
-
 
 @contextmanager
 def create_session():
     """Provide a transactional scope around a series of operations."""
+    session = Session()
     try:
         yield session
         session.commit()
@@ -19,9 +18,6 @@ def create_session():
         session.rollback()
         raise
 
-
-def close_session():
-    session.close()
 
 
 def with_session(method):
@@ -40,10 +36,10 @@ def with_session(method):
             result = yield method(session=_session, *args, **params)
             raise Return(result)
         except Return:
-            session.commit()
+            _session.commit()
             raise
         except:
-            session.rollback()
+            _session.rollback()
             raise
 
     return wrapper

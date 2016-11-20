@@ -2,6 +2,7 @@ from ParkingFinder.mappers import Mapper
 from ParkingFinder.entities.waiting_user import WaitingUser
 from ParkingFinder.tables.waiting_users import WaitingUsers
 
+
 class WaitingUserMapper(Mapper):
     _ENTITY = WaitingUser
     _MODEL = WaitingUsers
@@ -9,28 +10,38 @@ class WaitingUserMapper(Mapper):
     @staticmethod
     def _build_map(record):
         location = {
-            'longitude': record.longitude,
-            'latitude': record.latitude,
+            'longitude': record['longitude'],
+            'latitude': record['latitude'],
         }
-        if record.level:
-            location.update({'level': record.level})
-        if record.location:
-            location.update({'location': record.location})
+        level = record.get('level', None)
+        address = record.get('address', None)
+        if level:
+            location['level'] = level
+        if address:
+            location['address'] = address
 
         params = {
-            'user_id': record.user_id,
+            'user_id': record['user_id'],
             'location': location,
-            'is_active': record.is_active,
-            'created_at': record.created_at,
+            'is_active': record['is_active'],
+            'created_at': record['created_at'],
         }
 
         return params
 
-
     @staticmethod
     def _to_record(entity):
-        return entity.to_primitive()
-
+        record = {
+            'user_id': entity.user_id,
+            'longitude': entity.location.longitude,
+            'latitude': entity.location.latitude,
+            'created_at': str(entity.created_at)
+        }
+        if entity.location.location:
+            record['address'] = entity.location.location
+        if entity.location.level:
+            record['level'] = entity.location.level
+        return record
 
     @classmethod
     def _to_model(cls, entity):
@@ -38,7 +49,6 @@ class WaitingUserMapper(Mapper):
             'user_id': entity.user_id,
             'longitude': entity.location.longitude,
             'latitude': entity.location.latitude,
-            'is_active': entity.is_active,
             'created_at': entity.created_at,
         }
         if entity.location.level:

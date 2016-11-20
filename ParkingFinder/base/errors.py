@@ -71,7 +71,6 @@ def with_exception_handler(f):
         except Timeout as ex:
             self.set_status(httplib.REQUEST_TIMEOUT)
             logger.error({
-                "error": ex.message,
                 "request": self.request,
                 "body": self.request.body,
                 "exception": ex
@@ -82,18 +81,37 @@ def with_exception_handler(f):
                 "exception": str(ex)
             })
         except (AssertionError, InvalidArguments, InvalidEntity) as ex:
+            logger.warn({
+                "request": self.request,
+                "body": self.request.body,
+                "exception": ex
+
+            })
             self.set_status(httplib.BAD_REQUEST)
             self.write({
                 "error": "Bad Request",
                 "exception": str(ex)
             })
         except NotFound as ex:
+            logger.warn({
+                "request": self.request,
+                "body": self.request.body,
+                "exception": ex
+
+            })
             self.set_status(httplib.NOT_FOUND)
             self.write({
                 "error": "Not Found",
                 "exception": str(ex)
             })
         except Unauthorized as ex:
+            logger.warn({
+                "request": self.request,
+                "body": self.request.body,
+                "exception": ex
+
+            })
+            self.set_status(httplib.NOT_FOUND)
             self.set_status(httplib.UNAUTHORIZED)
             self.write({
                 "error": "Unauthorized",
@@ -101,7 +119,6 @@ def with_exception_handler(f):
             })
         except Exception as ex:
             logger.error({
-                "error": ex.message,
                 "request": self.request,
                 "body": self.request.body,
                 "exception": ex

@@ -4,6 +4,7 @@ from schematics.types import (
     BooleanType,
     DateTimeType,
     StringType,
+    IntType,
 )
 from schematics.types.compound import ModelType
 
@@ -21,8 +22,13 @@ class AvailableParkingSpace(Entity):
     plate = StringType(min_length=7, max_length=7, required=True)
     location = ModelType(model_class=Location, required=True)
     is_active = BooleanType(required=True, default=False)
-    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f', default=datetime.utcnow)
-    updated_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f', default=datetime.utcnow)
+    expired_at = DateTimeType(
+        required=True,
+        formats='%Y-%m-%d %H:%M:%S.%f',
+        serialized_format='%Y-%m-%d %H:%M:%S.%f',
+        default=datetime.utcnow
+    )
+    distance = IntType(required=False)
 
     @classmethod
     def get_mock_object(cls, context=None, overrides=None):

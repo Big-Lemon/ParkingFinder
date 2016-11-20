@@ -109,14 +109,11 @@ class UserRequestService(object):
         try:
             list_of_matching_space = yield MatchedParkingList.read_many(user_id=user_id)
             # loop to change the corresponding status in the table
-            # import ipdb
-            # ipdb.set_trace()
             for matched_result in list_of_matching_space:
                 if accepted_space_plate != matched_result.plate:
                     _status = 'rejected'
                 elif matched_result.is_expired:
                     _status = 'expired'
-                    raise Timeout
                 else:
                     _status = 'reserved'
 
@@ -208,11 +205,12 @@ class UserRequestService(object):
         """
         try:
             # you can only use read_many here since you don't want change the status of the space in table
-            list_of_available_space = yield AvailableParkingSpacePool.read_many(latitude=latitude,
-                                                                                longitude=longitude,
-                                                                                location=location)
-            space_return = list_of_available_space
-            raise Return(space_return)
+            list_of_available_space = yield AvailableParkingSpacePool.read_many(
+                latitude=latitude,
+                longitude=longitude,
+                location=location
+            )
+            raise Return(list_of_available_space)
         except NoResultFound:
             raise NoResultFound
 
