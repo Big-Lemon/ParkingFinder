@@ -1,15 +1,17 @@
 import httplib
 import json
 import pytest
+from datetime import datetime
 from doubles import expect
 
 from ParkingFinder.handlers import parking_space as module
 from ParkingFinder.handlers.app import app as application
 from ParkingFinder.entities.access_token import AccessToken
+from ParkingFinder.entities.available_parking_space import AvailableParkingSpace
 from ParkingFinder.entities.parking_space import ParkingSpace
 from ParkingFinder.entities.user import User
 from ParkingFinder.entities.vehicle import Vehicle
-from ParkingFinder.entities.available_parking_space import AvailableParkingSpace
+from ParkingFinder.entities.waiting_user import WaitingUser
 from ParkingFinder.repositories.access_token_repository import AccessTokenRepository
 from tornado.httpclient import HTTPError
 
@@ -95,20 +97,17 @@ def test_post_parking_space_with_no_matching_user(http_client, base_url, access_
         plate=plate
     ).and_raise(module.Timeout)
 
-    response = yield http_client.fetch(
-        url,
-        method="PUT",
-        body=json.dumps({
-            "plate": plate,
-            "access_token": access_token.access_token
-        })
-    )
-    body = response.body
-    _body = json.loads(body)
-    _parking_space = _body.get('parking_space')
-
-    assert not _parking_space
-    assert response.code == 200
+    try:
+        yield http_client.fetch(
+            url,
+            method="PUT",
+            body=json.dumps({
+                "plate": plate,
+                "access_token": access_token.access_token
+            })
+        )
+    except HTTPError as ex:
+        assert ex.code == httplib.REQUEST_TIMEOUT
 
 
 @pytest.mark.gen_test
@@ -366,7 +365,188 @@ def test_check_in(http_client, base_url, access_token):
 
 
 @pytest.mark.gen_test
-def test_post_parking_space_with_non_checked_in_vehicle(http_client, base_url, access_token):
+def test_request_parking_space(http_client, base_url, access_token):
+    url = base_url + '/parkingSpace/request/' + access_token.user_id
+
+    plate = "1234567"
+    longitude = 123.123
+    latitude = 321.321
+
+    user = User.get_mock_object(overrides={
+        'user_id': access_token.user_id,
+        'activated_vehicle': '123'
+    })
+    available_parking_spaces = [AvailableParkingSpace.get_mock_object(
+        overrides={
+            'plate': plate,
+            'location': {
+                'latitude': latitude,
+                'longitude': longitude
+            }
+        })]
+
+    expect(AccessTokenRepository).read_one(
+        access_token=access_token.access_token
+    ).and_return_future(
+        access_token
+    )
+    expect(module.UserService).get_user_detail(
+        user_id=access_token.user_id
+    ).and_return_future(user)
+    expect(module.UserRequestService).request_parking_space.and_return_future(
+        available_parking_spaces
+    )
+    response = yield http_client.fetch(
+        url,
+        method="PUT",
+        body=json.dumps({
+            "access_token": access_token.access_token,
+            "latitude": latitude,
+            "longitude": longitude,
+        })
+    )
+
+    body = json.loads(response.body)
+    _available_parking_spaces = body['available_parking_spaces']
+    assert len(_available_parking_spaces) == 1
+    left = _available_parking_spaces[0]
+    right = available_parking_spaces[0]
+    assert left['plate'] == right.plate
+    assert left['latitude'] == right.location.latitude
+    assert left['longitude'] == right.location.longitude
+
+
+@pytest.mark.gen_test
+def test_request_parking_space_with_no_activated_vehicle(http_client, base_url, access_token):
+    url = base_url + '/parkingSpace/request/' + access_token.user_id
+
+    longitude = 123.123
+    latitude = 321.321
+
+    user = User.get_mock_object(overrides={
+        'user_id': access_token.user_id,
+        'activated_vehicle': None
+    })
+
+    expect(AccessTokenRepository).read_one(
+        access_token=access_token.access_token
+    ).and_return_future(
+        access_token
+    )
+    expect(module.UserService).get_user_detail(
+        user_id=access_token.user_id
+    ).and_return_future(user)
+    try:
+        yield http_client.fetch(
+            url,
+            method="PUT",
+            body=json.dumps({
+                "access_token": access_token.access_token,
+                "latitude": latitude,
+                "longitude": longitude,
+            })
+        )
+
+    except HTTPError as ex:
+        assert ex.code == 400
+
+
+@pytest.mark.gen_test
+def test_request_parking_space_with_user_terminate_service(http_client, base_url, access_token):
+    url = base_url + '/parkingSpace/request/' + access_token.user_id
+
+    plate = "1234567"
+    longitude = 123.123
+    latitude = 321.321
+
+    user = User.get_mock_object(overrides={
+        'user_id': access_token.user_id,
+        'activated_vehicle': '123456'
+    })
+    available_parking_spaces = [AvailableParkingSpace.get_mock_object(
+        overrides={
+            'plate': plate,
+            'location': {
+                'latitude': latitude,
+                'longitude': longitude
+            },
+        })]
+
+    expect(AccessTokenRepository).read_one(
+        access_token=access_token.access_token
+    ).and_return_future(
+        access_token
+    )
+    expect(module.UserService).get_user_detail(
+        user_id=access_token.user_id
+    ).and_return_future(user)
+    expect(module.UserRequestService).request_parking_space.and_raise(
+        module.InvalidArguments
+    )
+    try:
+        yield http_client.fetch(
+            url,
+            method="PUT",
+            body=json.dumps({
+                "access_token": access_token.access_token,
+                "latitude": latitude,
+                "longitude": longitude,
+            })
+        )
+
+    except HTTPError as ex:
+        assert ex.code == 400
+
+
+@pytest.mark.gen_test
+def test_request_parking_space_with_user_terminate_service(http_client, base_url, access_token):
+    url = base_url + '/parkingSpace/request/' + access_token.user_id
+
+    plate = "1234567"
+    longitude = 123.123
+    latitude = 321.321
+
+    user = User.get_mock_object(overrides={
+        'user_id': access_token.user_id,
+        'activated_vehicle': '123456'
+    })
+    available_parking_spaces = [AvailableParkingSpace.get_mock_object(
+        overrides={
+            'plate': plate,
+            'location': {
+                'latitude': latitude,
+                'longitude': longitude
+            },
+        })]
+
+    expect(AccessTokenRepository).read_one(
+        access_token=access_token.access_token
+    ).and_return_future(
+        access_token
+    )
+    expect(module.UserService).get_user_detail(
+        user_id=access_token.user_id
+    ).and_return_future(user)
+    expect(module.UserRequestService).request_parking_space.and_raise(
+        module.Timeout
+    )
+    try:
+        yield http_client.fetch(
+            url,
+            method="PUT",
+            body=json.dumps({
+                "access_token": access_token.access_token,
+                "latitude": latitude,
+                "longitude": longitude,
+            })
+        )
+
+    except HTTPError as ex:
+        assert ex.code == httplib.REQUEST_TIMEOUT
+
+
+@pytest.mark.gen_test
+def test_post_parking_space_with_non_checked_in_vehicle():
     vehicle = Vehicle.get_mock_object()
     user = User.get_mock_object(overrides={"owned_vehicles": None})
     expect(module.UserService).get_user_detail(user_id=user.user_id).and_return_future(user)

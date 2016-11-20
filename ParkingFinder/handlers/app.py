@@ -4,10 +4,11 @@ from ParkingFinder.handlers import HealthHandler
 from ParkingFinder.handlers import FacebookGraphLoginHandler
 from ParkingFinder.handlers.user_information import UserInformationHandler
 from ParkingFinder.handlers.parking_space import (
+    ParkingLotHandler,
     PostParkingSpaceHandler,
-    ReserveParkingSpaceHandler,
     RejectParkingSpaceHandler,
-    ParkingLotHandler
+    RequestParkingSpaceHandler,
+    ReserveParkingSpaceHandler,
 )
 
 app = Application([
@@ -16,6 +17,7 @@ app = Application([
     (r'/auth/facebook', FacebookGraphLoginHandler),
     (r'/user/(.*)', UserInformationHandler),
     (r'/parkingSpace/post/(.*)', PostParkingSpaceHandler),
+    (r'/parkingSpace/request/(.*)', RequestParkingSpaceHandler),
     (r'/parkingSpace/reserve/(.*)', ReserveParkingSpaceHandler),
     (r'/parkingSpace/reject/(.*)', RejectParkingSpaceHandler),
     (r'/parkingSpace/checkout/(.*)', ParkingLotHandler),

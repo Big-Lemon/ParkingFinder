@@ -7,6 +7,7 @@ from ParkingFinder.base.errors import InvalidArguments, NotFound, with_exception
 from ParkingFinder.base.validate_access_token import with_token_validation
 from ParkingFinder.base.errors import Timeout
 from ParkingFinder.entities.parking_space import ParkingSpace
+from ParkingFinder.entities.waiting_user import WaitingUser
 from ParkingFinder.handlers.handler import BaseHandler
 from ParkingFinder.mappers.available_parking_space_mapper import AvailableParkingSpaceMapper
 from ParkingFinder.mappers.parking_space_mapper import ParkingSpaceMapper
@@ -16,6 +17,76 @@ from ParkingFinder.repositories.vehicle_repository import VehicleRepository
 from ParkingFinder.services.user import UserService
 from ParkingFinder.services.parking_space import ParkingSpaceService
 from ParkingFinder.services.user_request import UserRequestService
+
+
+class RequestParkingSpaceHandler(BaseHandler):
+    """
+    Handle Request Parking Space
+nn
+    """
+    @with_exception_handler
+    @with_token_validation
+    @coroutine
+    def put(self, user_id):
+        """
+
+        request format: {
+            "longitude": 123.123,
+            "latitude": 123.456,
+            "level": None,
+            "address": None,
+        }
+
+        return format: {
+            "available_parking_spaces": [
+            {
+                'plate': '1234567',
+                'latitude': 123.123,
+                'longitude': 123.456,
+                'address': None,
+                'level': None
+            }
+        }
+
+        BAD_REQUEST: the user passed in is not valid or user terminates
+            the service during transition
+        REQUEST_TIMEOUT: the request timeout, cliend could send request again
+
+        :param user_id:
+        :return:
+        """
+        payload = json.loads(self.request.body)
+        longitude = payload.get("longitude", None)
+        latitude = payload.get("latitude", None)
+        assert longitude and latitude
+
+        user = yield UserService.get_user_detail(user_id=user_id)
+        assert user.activated_vehicle
+
+        waiting_user = WaitingUser({
+            'user_id': user_id,
+            'location': {
+                'longitude': longitude,
+                'latitude': latitude
+            },
+        })
+
+        available_parking_spaces = yield UserRequestService.request_parking_space(
+            waiting_user=waiting_user
+        )
+
+        _spaces = [
+            AvailableParkingSpaceMapper.to_record(entity=parking_space)
+            for parking_space in available_parking_spaces
+            ]
+
+        self.set_status(httplib.OK)
+        self.write({
+            'available_parking_spaces': _spaces
+        })
+
+
+
 
 class PostParkingSpaceHandler(BaseHandler):
     """
@@ -45,31 +116,27 @@ class PostParkingSpaceHandler(BaseHandler):
             }
         }
 
+        REQUEST_TIMEOUT: request timeout, client could send the request again to keep
+            in the matching queue
+
         :param String user_id:
         :return:
         """
 
-        try:
-            payload = json.loads(self.request.body)
-            plate = payload.get("plate", False)
-            assert plate
+        payload = json.loads(self.request.body)
+        plate = payload.get("plate", False)
+        assert plate
 
-            if (yield _verify_vehicle_belonging(user_id=user_id, plate=plate)):
-                parking_space = yield ParkingSpaceService.post_parking_space(plate=plate)
-                _response = ParkingSpaceMapper.to_record(entity=parking_space)
-                self.set_status(httplib.OK)
-                self.write({
-                    "parking_space": _response
-                })
-
-            else:
-                raise InvalidArguments
-
-        except Timeout:
+        if (yield _verify_vehicle_belonging(user_id=user_id, plate=plate)):
+            parking_space = yield ParkingSpaceService.post_parking_space(plate=plate)
+            _response = ParkingSpaceMapper.to_record(entity=parking_space)
             self.set_status(httplib.OK)
             self.write({
-                "parking_space": None
+                "parking_space": _response
             })
+
+        else:
+            raise InvalidArguments
 
 
 class ReserveParkingSpaceHandler(BaseHandler):

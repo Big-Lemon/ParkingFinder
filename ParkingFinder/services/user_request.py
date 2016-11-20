@@ -33,10 +33,6 @@ class NoResultFoundInMatchedSpaceTable(BaseError):
     error = "No Result found In Matched Space Table"
 
 
-class UserTerminatedInTheHalfWay(BaseError):
-    error = "User Terminated In The Half Way"
-
-
 class CanNotStopForwardingMessage(BaseError):
     error = "Can Not Forwarding Message"
 
@@ -52,7 +48,7 @@ class UserRequestService(object):
         :param: cached_space_list: list of previous user-rejected parking_plate_number
         :param: waiting_user: user entity
         :raise: Timeout: no space is available in a specific time so return timeout
-        :raise UserTerminatedInTheHalfWay : means user terminates further service
+        :raise InvalidArgument: means user terminates further service
         :raise InvalidEntity: the user passed in is not valid
         :return: List<AvailableParkingSpace>
         """
@@ -60,6 +56,7 @@ class UserRequestService(object):
         space_return = []
         try:
             user_info = yield WaitingUserPool.read_one(user_id=waiting_user.user_id)
+            # TODO if user exist, update user geographical location
             try:
                 space_return = yield cls._loop_checking_space_availability(user_id=waiting_user.user_id)
             except Timeout:
@@ -85,12 +82,14 @@ class UserRequestService(object):
         except NoResultFound:
             # case where user stop the service
             for space in space_return:
-                modified_row = yield MatchedParkingList.update(user_id=waiting_user.user_id,
-                                                               plate=space.plate,
-                                                               status='rejected')
+                modified_row = yield MatchedParkingList.update(
+                    user_id=waiting_user.user_id,
+                    plate=space.plate,
+                    status='rejected'
+                )
                 if modified_row == 0:
                     raise InvalidEntity
-            raise UserTerminatedInTheHalfWay
+            raise InvalidArguments
 
     @classmethod
     @coroutine
@@ -103,7 +102,7 @@ class UserRequestService(object):
         :raise: TimeOut: use didn't make choice in a specific time range
         :raise: InvalidEntity: this means information among tables is not consistent
                                 possibly internal error
-        :raise: UserTerminatedInTheHalfWay: this means user terminate the service in the half way
+        :raise: InvalidArgument: this means user terminate the service in the half way
         :return: ParkingSpace: matched parking space
         """
 
@@ -140,7 +139,7 @@ class UserRequestService(object):
                     plate=accepted_space_plate,
                     status='rejected'
                 )
-                raise UserTerminatedInTheHalfWay
+                raise InvalidArguments
             else:
                 parking_space = yield ParkingLotRepository.read_one(plate=accepted_space_plate)
                 raise Return(parking_space)
@@ -156,7 +155,7 @@ class UserRequestService(object):
         this function will either throw a exception or return a nonempty list
         :param WaitingUser waiting_user:
         :raise Timeout : means currently none of spaces can be found
-        :raise UserTerminatedInTheHalfWay : means user terminates further service
+        :raise InvalidArgument: means user terminates further service
         :raise InvalidEntity : this means information among tables is not consistent
                                 possibly internal error
         :return: list<AvailableParkingSpace>
@@ -194,7 +193,7 @@ class UserRequestService(object):
                                                                status='rejected')
                 if modified_row == 0:
                     raise InvalidEntity
-            raise UserTerminatedInTheHalfWay
+            raise InvalidArguments
 
     @classmethod
     @coroutine

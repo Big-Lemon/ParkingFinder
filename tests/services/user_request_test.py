@@ -86,7 +86,7 @@ def test_request_parking_space_when_user_does_not_exist_in_matched_table_and_doe
     expect(module.UserRequestService)._checking_space_availability(
         waiting_user=_waiting_user
     ).and_raise(module.Timeout)
-    with pytest.raises(module.UserTerminatedInTheHalfWay):
+    with pytest.raises(module.InvalidArguments):
         yield module.UserRequestService.request_parking_space(waiting_user=_waiting_user)
 
 
@@ -164,7 +164,7 @@ def test_accept_parking_space_when_user_terminate():
         user_id=_user_id,
         plate=_list_of_space[0].plate,
         status='rejected', ).and_return_future(1)
-    with pytest.raises(module.UserTerminatedInTheHalfWay):
+    with pytest.raises(module.InvalidArguments):
         yield module.UserRequestService.accept_parking_space(
             user_id=_user_id,
             accepted_space_plate=_accept_plate)
@@ -314,7 +314,7 @@ def test_reject_all_parking_when_use_does_terminate():
         status='rejected',
     ).and_return_future(1)
 
-    with pytest.raises(module.UserTerminatedInTheHalfWay):
+    with pytest.raises(module.InvalidArguments):
         yield module.UserRequestService.reject_all_parking(
             waiting_user=_waiting_user)
 

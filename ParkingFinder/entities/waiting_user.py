@@ -1,3 +1,4 @@
+from datetime import datetime
 from schematics.types import (
     StringType,
     FloatType,
@@ -19,7 +20,7 @@ class WaitingUser(Entity):
     # required variables
     user_id = StringType(min_length=1, max_length=64, required=True)
     location = ModelType(model_class=Location, required=True)
-    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f')
+    created_at = DateTimeType(required=True, serialized_format='%Y-%m-%d %H:%M:%S.%f', default=datetime.utcnow)
     is_active = BooleanType(required=True, default=False)
 
     @classmethod
