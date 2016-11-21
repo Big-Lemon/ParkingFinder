@@ -22,7 +22,7 @@
 		"awaiting_action_timeout": 15,
 		"awaiting_action_duration": 1,
 		"num_display_parking_spaces": 10,
-		"num_pop_parking_spaces": 1,
+		"num_pop_parking_spaces": 2,
 		"radius": 500,
 		"unit": "m"
 	},
