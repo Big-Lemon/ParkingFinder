@@ -1,26 +1,22 @@
-from datetime import datetime, timedelta
-
 from clay import config
 
-from ParkingFinder.entities.entity import Entity
 from ParkingFinder.mappers import Mapper
 from ParkingFinder.entities.available_parking_space import AvailableParkingSpace
-from ParkingFinder.tables.available_parking_space_pool import AvailableParkingSpacePool
 
 WAITING_TIME = config.get('available_parking.waiting_duration')
 
 
 class AvailableParkingSpaceMapper(Mapper):
     _ENTITY = AvailableParkingSpace
-    _MODEL = AvailableParkingSpacePool
 
     @staticmethod
     def _build_map(record, *args, **params):
-        assert record.get('is_active', None)
+
+        assert record.get('is_active', None) != None
 
         location = {
-            'longitude': record['longitude'],
-            'latitude': record['latitude'],
+            'longitude': float(record['longitude']),
+            'latitude': float(record['latitude']),
         }
         address = record.get('address', None)
         level = record.get('level', None)
@@ -55,19 +51,3 @@ class AvailableParkingSpaceMapper(Mapper):
             params['level'] = entity.location.level
 
         return params
-
-    @classmethod
-    def _to_model(cls, entity):
-        params = {
-            'plate': entity.plate,
-            'longitude': entity.location.longitude,
-            'latitude': entity.location.latitude,
-            'is_active': entity.is_active,
-            'created_at': entity.created_at,
-            'updated_at': entity.updated_at,
-        }
-        if entity.location.level:
-            params.update({'level': entity.location.level})
-        if entity.location.location:
-            params.update({'location': entity.location.location})
-        return cls._MODEL(**params)

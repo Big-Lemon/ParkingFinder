@@ -23,13 +23,18 @@ class WaitingUserPool(object):
         assert user_id
         redis = _redis.StrictRedis(connection_pool=redis_pool)
         try:
+            if not redis.exists(WAITING_USER + user_id):
+                raise NoResultFound
             record = redis.hgetall(WAITING_USER + user_id)
             try:
-                redis.geopos(COORDINATE, user_id)
-                record['is_active'] = True
+                coordinate = redis.geopos(COORDINATE, user_id)
             except TypeError:
-                record['is_active'] = False
+                coordinate = []
 
+            if coordinate:
+                record['is_active'] = True
+            else:
+                record['is_active'] = False
             entity = WaitingUserMapper.to_entity(record=record)
             raise Return(entity)
         except TypeError:
@@ -65,6 +70,8 @@ class WaitingUserPool(object):
                 waiting_user.location.latitude,
                 waiting_user.user_id
             )
+        else:
+            redis.zrem(COORDINATE, waiting_user.user_id)
         redis.hmset(
             WAITING_USER + waiting_user.user_id,
             WaitingUserMapper.to_record(entity=waiting_user)
@@ -73,7 +80,7 @@ class WaitingUserPool(object):
 
     @classmethod
     @coroutine
-    def update(cls, user_id, is_active, location=None):
+    def update(cls, user_id, is_active=None, location=None):
         """
         Update the status(is_active) of the user with given user_id
 
@@ -84,17 +91,22 @@ class WaitingUserPool(object):
         :return:
         :raises NoResultFound: use is not in the pool
         """
+        assert is_active != None or location
         redis = _redis.StrictRedis(connection_pool=redis_pool)
-        if location:
-            location.validate()
-            redis.hmset(
-                WAITING_USER + user_id,
-                {
-                    'latitude': location.latitude,
-                    'longitude': location.longitude,
-                }
-            )
         try:
+            if location:
+                location.validate()
+                if not redis.exists(
+                    WAITING_USER + user_id
+                ):
+                    raise NoResultFound
+                redis.hmset(
+                    WAITING_USER + user_id,
+                    {
+                        'latitude': location.latitude,
+                        'longitude': location.longitude,
+                    }
+                )
             if is_active:
                 _latitude = redis.hget(
                     WAITING_USER + user_id,
@@ -126,11 +138,12 @@ class WaitingUserPool(object):
         :return WaitingUser:
         :raise NoResultFound:
         """
-        waiting_user = cls.read_one(user_id=user_id)
+        waiting_user = yield cls.read_one(user_id=user_id)
         redis = _redis.StrictRedis(connection_pool=redis_pool)
-        pipeline = redis.pipeline()
-        pipeline.zrem(WAITING_USER, user_id)
-        pipeline.delete(WAITING_USER + user_id)
+        if not redis.exists(WAITING_USER + user_id):
+            raise NoResultFound
+        redis.zrem(COORDINATE, user_id)
+        redis.delete(WAITING_USER + user_id)
         raise Return(waiting_user)
 
     @classmethod
@@ -149,7 +162,7 @@ class WaitingUserPool(object):
         :param list<string> ignore_user_ids: list of user_id that want to be filtered out
         :param func _ranking: ranking algorithm
         :return WaitingUser:
-        :raises NoResultFound: no waiting user in given coordinate
+        :return None: no waiting user in given coordinate
         """
         assert (longitude and latitude)
         radius = config.get('matching.radius')
@@ -157,21 +170,31 @@ class WaitingUserPool(object):
         _ignore_user_ids = set(ignore_user_ids or [])
 
         redis = _redis.StrictRedis(connection_pool=redis_pool)
-        pipeline = redis.pipeline()
-        waiting_users = pipeline.georadius(
-            name=COORDINATE,
-            longitude=latitude,
-            latitude=latitude,
-            radius=radius,
-            unit=unit,
-            sort='ASC'
-        )
+        with redis.pipeline() as pipeline:
+            while 1:
+                try:
+                    pipeline.watch(COORDINATE)
+                    waiting_users = pipeline.georadius(
+                        name=COORDINATE,
+                        longitude=longitude,
+                        latitude=latitude,
+                        radius=radius,
+                        unit=unit,
+                        sort='ASC'
+                    )
+                    for user in waiting_users:
+                        if user not in _ignore_user_ids:
+                            pipeline.zrem(COORDINATE, user)
+                            # back to buffered mode
+                            pipeline.multi()
+                            record = redis.hgetall(WAITING_USER + user)
+                            record['is_active'] = False
+                            entity = WaitingUserMapper.to_entity(record)
+                            # commit
+                            pipeline.execute()
+                            raise Return(entity)
+                    raise Return(None)
+                except _redis.WatchError:
+                    pass
 
-        for user in waiting_users:
-            if user[0] not in _ignore_user_ids:
-                record = redis.hgetall(WAITING_USER + user[0])
-                pipeline.zrem(COORDINATE, record[0])
-                record['is_active'] = False
-                entity = WaitingUserMapper.to_entity(record)
-                raise Return(entity)
         raise NoResultFound

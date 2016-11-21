@@ -27,11 +27,18 @@ class AvailableParkingSpacePool(object):
         assert plate
         redis = _redis.StrictRedis(connection_pool=redis_pool)
         try:
+            if not redis.exists(AVAILABLE_PARKING + plate):
+                raise NoResultFound
+
             parking = redis.hgetall(AVAILABLE_PARKING + plate)
             try:
-                redis.geopos(COORDINATE, plate)
-                parking['is_active'] = True
+                coordinate = redis.geopos(COORDINATE, plate)
             except TypeError:
+                coordinate = []
+
+            if coordinate:
+                parking['is_active'] = True
+            else:
                 parking['is_active'] = False
 
             available_parking_space = AvailableParkingSpaceMapper.to_entity(parking)
@@ -99,9 +106,11 @@ class AvailableParkingSpacePool(object):
             redis.geoadd(
                 COORDINATE,
                 available_parking_space.location.longitude,
-                available_parking_space.loaction.latitude,
+                available_parking_space.location.latitude,
                 available_parking_space.plate,
             )
+        else:
+            redis.zrem(COORDINATE, available_parking_space.plate)
         redis.hmset(
             AVAILABLE_PARKING + available_parking_space.plate,
             AvailableParkingSpaceMapper.to_record(entity=available_parking_space)
@@ -110,33 +119,56 @@ class AvailableParkingSpacePool(object):
 
     @classmethod
     @coroutine
-    def update(cls, plate, is_active):
+    def update(cls, plate, is_active=None, location=None):
         """
         Update 'is_active' column of a parking space with given plate
         :param str plate:
         :param boolean is_active:
+        :param Location location:
         :return AvailableParkingSpace:
         """
+        assert location or is_active != None
         redis = _redis.StrictRedis(connection_pool=redis_pool)
-        if is_active:
-            latitude = redis.hget(
-                AVAILABLE_PARKING + plate,
-                'latitude'
-            )
-            longitude = redis.hget(
-                AVAILABLE_PARKING + plate,
-                'longitude'
-            )
-            redis.geoadd(
-                COORDINATE,
-                longitude,
-                latitude,
-                plate,
-            )
-        else:
-            redis.zrem(COORDINATE, plate)
-        parking = yield cls.read_one(plate=plate)
-        raise Return(parking)
+        try:
+            if location:
+                location.validate()
+                if not redis.exists(
+                    AVAILABLE_PARKING + plate
+                ):
+                    raise NoResultFound
+                redis.hmset(
+                    AVAILABLE_PARKING + plate,
+                    {
+                        'latitude': location.latitude,
+                        'longitude': location.longitude,
+                    }
+                )
+            if not redis.exists(
+                AVAILABLE_PARKING + plate
+            ):
+                raise NoResultFound
+            if is_active:
+                latitude = redis.hget(
+                    AVAILABLE_PARKING + plate,
+                    'latitude'
+                )
+                longitude = redis.hget(
+                    AVAILABLE_PARKING + plate,
+                    'longitude'
+                )
+                redis.geoadd(
+                    COORDINATE,
+                    longitude,
+                    latitude,
+                    plate,
+                )
+            else:
+                redis.zrem(COORDINATE, plate)
+
+            parking = yield cls.read_one(plate=plate)
+            raise Return(parking)
+        except TypeError:
+            raise NoResultFound
 
     @classmethod
     @coroutine
@@ -149,14 +181,16 @@ class AvailableParkingSpacePool(object):
         """
         parking = yield cls.read_one(plate=plate)
         redis = _redis.StrictRedis(connection_pool=redis_pool)
-        pipeline = redis.pipeline()
-        pipeline.zrem(COORDINATE, plate)
-        pipeline.delete(AVAILABLE_PARKING + plate)
+
+        redis.zrem(COORDINATE, plate)
+        if not redis.exists(AVAILABLE_PARKING + plate):
+            raise NoResultFound
+        redis.delete(AVAILABLE_PARKING + plate)
         raise Return(parking)
 
     @classmethod
     @coroutine
-    def pop_many(cls, longitude, latitude, location, ignore_list=None,_filter=None):
+    def pop_many(cls, longitude, latitude, location=None, ignore_list=None,_filter=None):
         """
         This method will find (#) of parking spaces within certain (*range)
         that can be passed by '_filter'
@@ -176,32 +210,38 @@ class AvailableParkingSpacePool(object):
         radius = config.get('matching.radius')
         unit = config.get('matching.unit')
         _ignore_list = set(ignore_list or [])
-
-        redis = _redis.StrictRedis(connection_pool=redis_pool)
-        pipeline = redis.pipeline()
-        available_parkings = pipeline.georadius(
-            name=COORDINATE,
-            longitude=longitude,
-            latitude=latitude,
-            radius=radius,
-            unit=unit,
-            withdist=True,
-            sort='ASC'
-        )
         n = config.get('matching.num_pop_parking_spaces')
 
-        _entities = []
-        for parking_space in available_parkings:
-            if record[0] not in _ignore_list:
-                record = redis.hgetall(AVAILABLE_PARKING + parking_space[0])
-                # remove from active pool
-                pipeline.zrem(COORDINATE, record[0])
-                record['is_active'] = False
-                record['distance'] = parking_space[1]
-                entity = AvailableParkingSpaceMapper.to_entity(record)
-                _entities.append(entity)
-                n -= 1
-            if n <= 0:
-                break
-        raise Return(_entities)
+        redis = _redis.StrictRedis(connection_pool=redis_pool)
+        with redis.pipeline() as pipeline:
+            while 1:
+                try:
+                    pipeline.watch(COORDINATE)
+                    available_parkings = pipeline.georadius(
+                        name=COORDINATE,
+                        longitude=longitude,
+                        latitude=latitude,
+                        radius=radius,
+                        unit=unit,
+                        withdist=True,
+                        sort='ASC'
+                    )
+
+                    _entities = []
+                    for parking_space in available_parkings:
+                        if parking_space[0] not in _ignore_list:
+                            record = redis.hgetall(AVAILABLE_PARKING + parking_space[0])
+                            # remove from active pool
+                            pipeline.zrem(COORDINATE, parking_space[0])
+                            record['is_active'] = False
+                            record['distance'] = parking_space[1]
+                            entity = AvailableParkingSpaceMapper.to_entity(record)
+                            _entities.append(entity)
+                            n -= 1
+                        if n <= 0:
+                            break
+                    pipeline.execute()
+                    raise Return(_entities)
+                except _redis.WatchError:
+                    pass
 
