@@ -9,8 +9,6 @@ from schematics.types import (
 )
 
 from ParkingFinder.entities.entity import Entity
-from ParkingFinder.entities.parking_space import ParkingSpace
-from ParkingFinder.entities.waiting_user import WaitingUser
 
 
 class MatchedParkingSpace(Entity):

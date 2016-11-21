@@ -6,6 +6,8 @@ from tornado.gen import coroutine, Return
 from ParkingFinder.base.redis_pool import redis_pool
 from ParkingFinder.mappers.waiting_user_mapper import WaitingUserMapper
 
+logger = config.get_logger('handler.waiting_user_pool')
+
 WAITING_USER = 'waiting_user:'
 COORDINATE = 'active_waiting_user:'
 
@@ -63,6 +65,14 @@ class WaitingUserPool(object):
         """
         waiting_user.validate()
         redis = _redis.StrictRedis(connection_pool=redis_pool)
+        redis.hmset(
+            WAITING_USER + waiting_user.user_id,
+            WaitingUserMapper.to_record(entity=waiting_user)
+        )
+        logger.info({
+            'message': 'new user has been inserted into waiting pool',
+            'user': waiting_user
+        })
         if waiting_user.is_active:
             redis.geoadd(
                 COORDINATE,
@@ -70,12 +80,16 @@ class WaitingUserPool(object):
                 waiting_user.location.latitude,
                 waiting_user.user_id
             )
+            logger.info({
+                'message': 'user has been marked as active',
+                'user': waiting_user
+            })
         else:
             redis.zrem(COORDINATE, waiting_user.user_id)
-        redis.hmset(
-            WAITING_USER + waiting_user.user_id,
-            WaitingUserMapper.to_record(entity=waiting_user)
-        )
+            logger.info({
+                'message': 'user has been marked as inactive',
+                'user': waiting_user
+            })
         raise Return(waiting_user)
 
     @classmethod
@@ -122,8 +136,22 @@ class WaitingUserPool(object):
                     _latitude,
                     user_id
                 )
+                logger.info({
+                    'message': 'user status switch to active',
+                    'user': {
+                        'user_id': user_id,
+                        'is_active': is_active
+                    }
+                })
             else:
                 redis.zrem(COORDINATE, user_id)
+                logger.info({
+                    'message': 'user status switch to inactive',
+                    'user': {
+                        'user_id': user_id,
+                        'is_active': is_active
+                    }
+                })
             waiting_user = yield cls.read_one(user_id=user_id)
             raise Return(waiting_user)
         except TypeError:
@@ -144,11 +172,15 @@ class WaitingUserPool(object):
             raise NoResultFound
         redis.zrem(COORDINATE, user_id)
         redis.delete(WAITING_USER + user_id)
+        logger.info({
+            'message': 'user removed from waiting pool',
+            'user': waiting_user
+        })
         raise Return(waiting_user)
 
     @classmethod
     @coroutine
-    def pop_one(cls, longitude, latitude, ignore_user_ids=None, _ranking=None):
+    def pop_one(cls, longitude, latitude, location=None, ignore_user_ids=None, _ranking=None):
         """
         This method will
             1. read len(ignore_user_ids) +1 active users
@@ -182,6 +214,14 @@ class WaitingUserPool(object):
                         unit=unit,
                         sort='ASC'
                     )
+                    logger.info({
+                        'message': 'waiting users in the area',
+                        'waiting_users': waiting_users,
+                        'latitude': latitude,
+                        'longitude': longitude,
+                        'radius': radius,
+                        'unit': unit
+                    })
                     for user in waiting_users:
                         if user not in _ignore_user_ids:
                             pipeline.zrem(COORDINATE, user)
@@ -192,6 +232,10 @@ class WaitingUserPool(object):
                             entity = WaitingUserMapper.to_entity(record)
                             # commit
                             pipeline.execute()
+                            logger.info({
+                                'message': 'user has been matched with a vehicle',
+                                'user': entity
+                            })
                             raise Return(entity)
                     raise Return(None)
                 except _redis.WatchError:

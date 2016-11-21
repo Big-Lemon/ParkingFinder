@@ -489,7 +489,7 @@ def test_checking_space_availability_with_find_in_loop():
         latitude=_location_a.latitude,
         longitude=_location_a.longitude,
         location=_location_a.location
-    ).and_raise(module.NoResultFound)
+    ).and_return_future([])
 
     expect(module.WaitingUserPool).update(
         user_id=_waiting_user.user_id,

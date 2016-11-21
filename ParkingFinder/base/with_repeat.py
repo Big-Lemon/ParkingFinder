@@ -32,7 +32,7 @@ def with_repeat(timeout=None, repeat_times=None, repeat_exceptions=None, duratio
             _repeat_times = repeat_times
             _timeout = params.get('timeout', None) or timeout
             _start = time.time()
-            _end = _start
+            _end = _start + (timeout or 0)
             if _timeout:
                 _end += _timeout
             exception = None

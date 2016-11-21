@@ -15,14 +15,14 @@ from ParkingFinder.repositories import (
 from ParkingFinder.entities.matched_parking_space import MatchedParkingSpace
 from ParkingFinder.services.real_time_location_service import RealTimeLocationService
 
-logger = config.get_logger('service.parking_space')
+logger = config.get_logger('service.user_request')
 
 awaiting_matching_time_out = config.get('matching.matching_timeout')
 awaiting_matching_duration = config.get('matching.matching_duration')
-awaiting_matching_repeat_times = config.get('matching.matching_repeat_times')
+awaiting_matching_repeat_times = config.get('matching.matching_repeat_count')
 awaiting_action_time_out = config.get('matching.awaiting_action_timeout')
 awaiting_action_duration = config.get('matching.awaiting_action_duration')
-awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_times')
+awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_count')
 
 # now available_parking_space has longi lati loc and plate return available_space_list enough
 # use pop_many instead of read_many
@@ -53,6 +53,10 @@ class UserRequestService(object):
         :return: List<AvailableParkingSpace>
         """
         # branch to handle fetching list of available spaces
+        logger.info({
+            'message': 'request parking space',
+            'waiting user': waiting_user
+        })
         space_return = []
         try:
             user_info = yield WaitingUserPool.read_one(user_id=waiting_user.user_id)
@@ -108,6 +112,8 @@ class UserRequestService(object):
 
         try:
             list_of_matching_space = yield MatchedParkingList.read_many(user_id=user_id)
+            if not list_of_matching_space:
+                raise NoResultFound
             # loop to change the corresponding status in the table
             for matched_result in list_of_matching_space:
                 if accepted_space_plate != matched_result.plate:
@@ -203,16 +209,15 @@ class UserRequestService(object):
         :raise NNoResultFound
         :return: List<AvailableParkingSpace>
         """
-        try:
-            # you can only use read_many here since you don't want change the status of the space in table
-            list_of_available_space = yield AvailableParkingSpacePool.read_many(
-                latitude=latitude,
-                longitude=longitude,
-                location=location
-            )
-            raise Return(list_of_available_space)
-        except NoResultFound:
+        # you can only use read_many here since you don't want change the status of the space in table
+        list_of_available_space = yield AvailableParkingSpacePool.read_many(
+            latitude=latitude,
+            longitude=longitude,
+            location=location
+        )
+        if not list_of_available_space:
             raise NoResultFound
+        raise Return(list_of_available_space)
 
     @classmethod
     @with_repeat(
@@ -236,23 +241,31 @@ class UserRequestService(object):
                                 possibly internal error
         :return: list<AvailableParkingSpace>
         """
-        try:
-            list_of_matched_space = yield MatchedParkingList.read_many(user_id=user_id)
-            spaces_return = []
-            for matching_space in list_of_matched_space:
-                if matching_space.is_awaiting:
-                    try:
-                        space = yield AvailableParkingSpacePool.read_one(plate=matching_space.plate)
-                        spaces_return.append(space)
-                    except NoResultFound:
-                        raise InvalidEntity
-            if not spaces_return:
-                raise NoResultFoundInMatchedSpaceTable
-            else:
-                raise Return(spaces_return)
+        list_of_matched_space = yield MatchedParkingList.read_many(user_id=user_id)
+        if not list_of_matched_space:
+            logger.info({
+                'message': 'no available parking spaces',
+                'user_id': user_id,
+            })
 
-        except NoResultFound:
             raise NoResultFoundInMatchedSpaceTable
+
+        spaces_return = []
+        for matching_space in list_of_matched_space:
+            if matching_space.is_awaiting:
+                try:
+                    space = yield AvailableParkingSpacePool.read_one(plate=matching_space.plate)
+                    spaces_return.append(space)
+                except NoResultFound:
+                    raise InvalidEntity
+        if not spaces_return:
+            logger.info({
+                'message': 'no available parking spaces',
+                'user_id': user_id,
+            })
+            raise NoResultFoundInMatchedSpaceTable
+        else:
+            raise Return(spaces_return)
 
     @classmethod
     @coroutine
@@ -276,30 +289,35 @@ class UserRequestService(object):
         # TODO: so parameter might change accordingly
         try:
             location = waiting_user.location
-            list_of_available_space = yield AvailableParkingSpacePool.pop_many(latitude=location.latitude,
-                                                                               longitude=location.longitude,
-                                                                               location=location.location)
-            spaces_return = list_of_available_space
-            for space_element in list_of_available_space:
-                # insert matched result in the Pre_reserved table and mark status as awaiting
-                modified = yield MatchedParkingList.insert(
-                    MatchedParkingSpace({
-                        'plate': space_element.plate,
-                        'user_id': waiting_user.user_id,
-                        'status': 'awaiting',
-                    })
-                )
+            list_of_available_space = yield AvailableParkingSpacePool.pop_many(
+                latitude=location.latitude,
+                longitude=location.longitude,
+                location=location.location
+            )
+            if not list_of_available_space:
+                modified_row = yield WaitingUserPool.update(
+                    user_id=waiting_user.user_id, is_active=True)
+                if modified_row == 0:
+                    raise InvalidEntity
+
+                spaces_return = yield cls._loop_checking_space_availability(waiting_user.user_id)
+                raise Return(spaces_return)
+            else:
+
+                spaces_return = list_of_available_space
+                for space_element in list_of_available_space:
+                    # insert matched result in the Pre_reserved table and mark status as awaiting
+                    modified = yield MatchedParkingList.insert(
+                        MatchedParkingSpace({
+                            'plate': space_element.plate,
+                            'user_id': waiting_user.user_id,
+                            'status': 'awaiting',
+                        })
+                    )
             raise Return(spaces_return)
         except IntegrityError:
             raise InvalidEntity
-        except NoResultFound:
-            # mark user as "active" here
 
-            modified_row = yield WaitingUserPool.update(user_id=waiting_user.user_id, is_active=True)
-            if modified_row == 0:
-                raise InvalidEntity
-            spaces_return = yield cls._loop_checking_space_availability(waiting_user.user_id)
-            raise Return(spaces_return)
 
     @classmethod
     @coroutine

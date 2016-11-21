@@ -8,8 +8,8 @@
         "database": "test"
     },
     "matching": {
-        "matching_repeat_times": 2,
-        "awaiting_action_repeat_times": 2,
+        "matching_repeat_count": 2,
+        "awaiting_action_repeat_count": 2,
         "num_display_parking_spaces": 10,
         "num_pop_parking_spaces": 2,
         "radius": 500,

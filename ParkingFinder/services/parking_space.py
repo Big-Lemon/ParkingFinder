@@ -41,10 +41,10 @@ logger = config.get_logger('service.parking_space')
 
 awaiting_matching_time_out = config.get('matching.matching_timeout')
 awaiting_matching_duration = config.get('matching.matching_duration')
-awaiting_matching_repeat_times = config.get('matching.matching_repeat_times')
+awaiting_matching_repeat_times = config.get('matching.matching_repeat_count')
 awaiting_action_time_out = config.get('matching.awaiting_action_timeout')
 awaiting_action_duration = config.get('matching.awaiting_action_duration')
-awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_times')
+awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_count')
 
 
 class AwaitingAction(BaseError):
@@ -75,6 +75,10 @@ class ParkingSpaceService(object):
         :raises Timeout: timeout, user can send post request again to continue listening the status
         :raises NotFound: the vehicle with given plate have not been checked in yet
         """
+        logger.info({
+            'message': 'awaiting matching',
+            'plate': plate
+        })
 
         try:
             parking_space = yield AvailableParkingSpacePool.read_one(plate=plate)
@@ -91,11 +95,19 @@ class ParkingSpaceService(object):
             vehicle = yield cls._handle_matching_status(
                 parking_space=parking_space
             )
+            logger.info({
+                'message': 'waiting user matched',
+                'plate': plate
+            })
             raise Return(vehicle)
         except Timeout:
             # simply ignore timeout exception of _handle_matching_status and get into
             # next round, the _handle_matching_status will remove the entry if
             # expired and matches a new waiting user
+            logger.info({
+                'message': 'no available waiting user',
+                'plate': plate
+            })
             raise AwaitingMatching
 
     @classmethod
@@ -126,6 +138,10 @@ class ParkingSpaceService(object):
                 'is_active': False
             })
         )
+        logger.info({
+            'message': 'new available parking space posted',
+            'available_parking_space': available_parking_space
+        })
         raise Return(available_parking_space)
 
     @classmethod
@@ -164,6 +180,10 @@ class ParkingSpaceService(object):
             # the matched record as reserved after time expired, it will
             # be seen as a valid reservation.
             if matched_parking_space.is_reserved:
+                logger.info({
+                    'message': 'a user reserve the parking space',
+                    'matched_parking_space': matched_parking_space
+                })
                 # The record should be removed no matter what decision user have made
                 yield MatchedParkingList.remove(plate=matched_parking_space.plate)
                 # user reserved the parking, the method will not remove itself from
@@ -173,14 +193,27 @@ class ParkingSpaceService(object):
                 vehicle = yield ParkingLotRepository.read_one(plate=parking_space.plate)
                 raise Return(vehicle)
 
-            elif matched_parking_space.is_awaiting:
-                # still waiting user's action
-                raise AwaitingAction
             elif matched_parking_space.is_expired or matched_parking_space.is_rejected:
                 yield MatchedParkingList.remove(plate=parking_space.plate)
+                logger.info({
+                    'message': 'matching expired',
+                    'matched_parking_space': matched_parking_space
+                })
                 raise NoResultFound
 
+            elif matched_parking_space.is_awaiting:
+                logger.info({
+                    'message': 'still waiting user action',
+                    'matched_parking_space': matched_parking_space
+                })
+                # still waiting user's action
+                raise AwaitingAction
+
         except NoResultFound:
+            logger.info({
+                'message': 'start matching new waiting user',
+                'parking_space': parking_space
+            })
             # this is happened because the waiting user has check into another parking spaces
             # on the way, match with another waiting user instead
             matched_parking_space = yield cls._matching_waiting_user(
@@ -209,31 +242,27 @@ class ParkingSpaceService(object):
             location=posted_parking_space.location
         )
         if waiting_user:
-            matching_record = cls._map_to_matched_parking(
-                parking_space=posted_parking_space,
-                waiting_user=waiting_user
-            )
+            matching_record = MatchedParkingSpace({
+                'plate': posted_parking_space.plate,
+                'user_id': waiting_user.user_id,
+                'status': 'awaiting'
+            })
             pre_reserved_parking_space = yield MatchedParkingList.insert(
-                matching_record=matching_record
+                matched_parking_space=matching_record
             )
+            logger.info({
+                'message': 'parking space matched with a waiting user',
+                'parking_space': posted_parking_space,
+                'waiting_user': waiting_user
+            })
             raise Return(pre_reserved_parking_space)
         else:
             yield AvailableParkingSpacePool.update(
                 plate=posted_parking_space.plate,
                 is_active=True
             )
+            logger.info({
+                'message': 'no waiting user found',
+                'parking_space': posted_parking_space
+            })
             raise Return(None)
-
-    @staticmethod
-    def _map_to_matched_parking(parking_space, waiting_user):
-        """
-        Map a parking space and a waiting user to matchedParking Entity
-
-        :param AvailableParkingSpace parking_space:
-        :param WaitingUser waiting_user:
-        :return MatchedParkingSpace: The entity that contains both AvailableParkingSpace and WaitingUser
-        """
-        return MatchedParkingSpace({
-            'parking_space': parking_space.plate,
-            'waiting_user': waiting_user.user_id,
-        })

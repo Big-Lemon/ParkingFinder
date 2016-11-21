@@ -7,6 +7,7 @@ from ParkingFinder.base.redis_pool import redis_pool
 from ParkingFinder.entities.available_parking_space import AvailableParkingSpace
 from ParkingFinder.mappers.available_parking_space_mapper import AvailableParkingSpaceMapper
 
+logger = config.get_logger('handler.available_parking_space_pool')
 
 AVAILABLE_PARKING = 'available_parking:'
 COORDINATE = 'active_parking_coordinate:'
@@ -102,6 +103,14 @@ class AvailableParkingSpacePool(object):
         """
         available_parking_space.validate()
         redis = _redis.StrictRedis(connection_pool=redis_pool)
+        redis.hmset(
+            AVAILABLE_PARKING + available_parking_space.plate,
+            AvailableParkingSpaceMapper.to_record(entity=available_parking_space)
+        )
+        logger.info({
+            'message': 'new parking space has been put into pool',
+            'parking_space': available_parking_space
+        })
         if available_parking_space.is_active:
             redis.geoadd(
                 COORDINATE,
@@ -109,12 +118,16 @@ class AvailableParkingSpacePool(object):
                 available_parking_space.location.latitude,
                 available_parking_space.plate,
             )
+            logger.info({
+                'message': 'new parking space has been put into active pool',
+                'parking_space': available_parking_space
+            })
         else:
             redis.zrem(COORDINATE, available_parking_space.plate)
-        redis.hmset(
-            AVAILABLE_PARKING + available_parking_space.plate,
-            AvailableParkingSpaceMapper.to_record(entity=available_parking_space)
-            )
+            logger.info({
+                'message': 'new parking space has been put into inactive pool',
+                'parking_space': available_parking_space
+            })
         raise Return(available_parking_space)
 
     @classmethod
@@ -162,8 +175,18 @@ class AvailableParkingSpacePool(object):
                     latitude,
                     plate,
                 )
+                logger.info({
+                    'message': 'a parking space has been changed to active',
+                    'plate': plate,
+                    'is_active': is_active
+                })
             else:
                 redis.zrem(COORDINATE, plate)
+                logger.info({
+                    'message': 'a parking space has been changed to inactive',
+                    'plate': plate,
+                    'is_active': is_active
+                })
 
             parking = yield cls.read_one(plate=plate)
             raise Return(parking)
@@ -186,6 +209,10 @@ class AvailableParkingSpacePool(object):
         if not redis.exists(AVAILABLE_PARKING + plate):
             raise NoResultFound
         redis.delete(AVAILABLE_PARKING + plate)
+        logger.info({
+            'message': 'a parking space has been removed from pool',
+            'parking': parking,
+        })
         raise Return(parking)
 
     @classmethod
@@ -241,6 +268,10 @@ class AvailableParkingSpacePool(object):
                         if n <= 0:
                             break
                     pipeline.execute()
+                    logger.info({
+                        'message': 'a user request to match parking spaces',
+                        'parking_spaces': _entities,
+                    })
                     raise Return(_entities)
                 except _redis.WatchError:
                     pass

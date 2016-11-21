@@ -28,6 +28,7 @@ class ParkingLotRepository(object):
                 ParkingLot.plate == plate
             ).one()
             entity = ParkingSpaceMapper.to_entity(record=parkinglot)
+
             raise Return(entity)
 
 

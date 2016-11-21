@@ -19,8 +19,10 @@
 	"matching": {
 		"matching_duration": 5,
 		"matching_repeat_count": 10,
+
 		"awaiting_action_timeout": 15,
 		"awaiting_action_duration": 1,
+
 		"num_display_parking_spaces": 10,
 		"num_pop_parking_spaces": 2,
 		"radius": 500,
@@ -29,5 +31,8 @@
 	"available_parking": {
 		"waiting_duration": 15,
 		"unit": "sec"
+	},
+	"posted_parking": {
+		"timeout": 15
 	}
 }

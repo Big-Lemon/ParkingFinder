@@ -1,3 +1,4 @@
+from clay import config
 from tornado.gen import coroutine, Return
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -25,7 +26,6 @@ class MatchedParkingList(object):
 
             raise Return(entity)
 
-
     @classmethod
     @coroutine
     def read_many(cls, user_id):
@@ -47,10 +47,9 @@ class MatchedParkingList(object):
 
             raise Return(entities)
 
-
     @classmethod
     @coroutine
-    def update(self, user_id, plate, status):
+    def update(cls, user_id, plate, status):
         """
         Update status column of a matched_result with given combination of user_id and plate
         :param str user_id:
@@ -67,7 +66,6 @@ class MatchedParkingList(object):
             entity = MatchedParkingSpaceMapper.to_entity(record=matched_parking_list)
             raise Return(entity)
 
-
     @staticmethod
     @coroutine
     def insert(matched_parking_space):
@@ -83,7 +81,6 @@ class MatchedParkingList(object):
             session.add(_matched_parking_space)
 
             raise Return(matched_parking_space)
-
 
     @classmethod
     @coroutine

@@ -23,7 +23,7 @@ app = Application([
     (r'/parkingSpace/checkout/(.*)', ParkingLotHandler),
     (r'/parkingSpace/checkin/(.*)', ParkingLotHandler),
     (r'/user/logout', FacebookGraphLoginHandler),
-])
+], autoreload=True)
 
 """
 ==============================================================================
