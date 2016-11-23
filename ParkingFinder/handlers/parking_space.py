@@ -16,7 +16,7 @@ from ParkingFinder.repositories.parking_lot import ParkingLotRepository
 from ParkingFinder.repositories.vehicle_repository import VehicleRepository
 from ParkingFinder.services.user import UserService
 from ParkingFinder.services.parking_space import ParkingSpaceService
-from ParkingFinder.services.user_request import UserRequestService
+from ParkingFinder.services.user_request import UserRequestService, CanNotStopForwardingMessage
 
 
 class RequestParkingSpaceHandler(BaseHandler):
@@ -55,6 +55,7 @@ nn
         :param user_id:
         :return:
         """
+        assert user_id
         payload = json.loads(self.request.body)
         longitude = payload.get("longitude", None)
         latitude = payload.get("latitude", None)
@@ -122,7 +123,7 @@ class PostParkingSpaceHandler(BaseHandler):
         :param String user_id:
         :return:
         """
-
+        assert user_id
         payload = json.loads(self.request.body)
         plate = payload.get("plate", False)
         assert plate
@@ -182,6 +183,7 @@ class ReserveParkingSpaceHandler(BaseHandler):
             :param String user_id:
             :return:
         """
+        assert user_id
         payload = json.loads(self.request.body)
         plate = payload.get("plate", False)
         assert plate
@@ -232,6 +234,7 @@ class RejectParkingSpaceHandler(BaseHandler):
         :param user_id:
         :return:
         """
+        assert user_id
         available_parking_spaces = yield UserRequestService.reject_all_parking(user_id=user_id)
         self.set_status(httplib.OK)
 
@@ -260,6 +263,7 @@ class ParkingLotHandler(BaseHandler):
         :param user_id:
         :return:
         """
+        assert user_id
         payload = json.loads(self.request.body)
         plate = payload.get("plate", False)
 
@@ -303,6 +307,7 @@ class ParkingLotHandler(BaseHandler):
         :param user_id:
         :return:
         """
+        assert user_id
         payload = json.loads(self.request.body)
         plate = payload.get("plate", None)
         longitude = payload.get("longitude", None)
@@ -321,8 +326,9 @@ class ParkingLotHandler(BaseHandler):
                         'latitude': latitude
                     }
                 }))
-
-            yield UserRequestService.service_terminate(user_id=user_id)
+            # remove user from user waiting pool has been handled in the
+            # user_request so do not handle this here
+            # yield UserRequestService.service_terminate(user_id=user_id)
             _parking_space = ParkingSpaceMapper.to_record(entity=parking_space)
             self.set_status(httplib.OK)
             self.write({
@@ -330,6 +336,32 @@ class ParkingLotHandler(BaseHandler):
             })
         else:
             raise InvalidArguments
+
+
+class ServiceTerminateHanlder(BaseHandler):
+
+    @with_exception_handler
+    @with_token_validation
+    @coroutine
+    def post(self, user_id):
+        """
+        terminate the service in the requester side
+        :param user_id:
+        :return:
+        """
+        assert user_id
+        try:
+            yield UserRequestService.service_terminate(user_id=user_id)
+            self.set_status(httplib.OK)
+        except CanNotStopForwardingMessage:
+            self.set_status(httplib.BAD_REQUEST)
+            self.write({
+                'massage': 'too late to stop the service'
+            })
+
+
+
+
 
 
 @coroutine

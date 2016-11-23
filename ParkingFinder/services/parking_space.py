@@ -96,7 +96,7 @@ class ParkingSpaceService(object):
                 parking_space=parking_space
             )
             logger.info({
-                'message': 'waiting user matched',
+                'message': 'waiting user reserved',
                 'plate': plate
             })
             raise Return(vehicle)
