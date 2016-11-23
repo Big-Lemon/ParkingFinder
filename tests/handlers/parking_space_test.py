@@ -338,9 +338,10 @@ def test_check_in(http_client, base_url, access_token):
         plate=plate
     ).and_return_future(True)
     expect(module.ParkingLotRepository).insert.and_return_future(parking_space)
-    expect(module.UserRequestService).service_terminate(
-        user_id=access_token.user_id
-    ).and_return_future(None)
+    # expect(module.UserRequestService).service_terminate(
+    #     user_id=access_token.user_id
+    # ).and_return_future(None)
+    # delete this part since there is no corresponding function to be called 
 
     response = yield http_client.fetch(
         url,
