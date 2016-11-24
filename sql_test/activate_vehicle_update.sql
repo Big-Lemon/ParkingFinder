@@ -1,0 +1,10 @@
+update users set activated_vehicle = "12MMM60" where user_id = "test_0";
+update users set activated_vehicle = "12MMM61" where user_id = "test_1";
+update users set activated_vehicle = "12MMM62" where user_id = "test_2";
+update users set activated_vehicle = "12MMM63" where user_id = "test_3";
+update users set activated_vehicle = "12MMM64" where user_id = "test_4";
+update users set activated_vehicle = "12MMM65" where user_id = "test_5";
+update users set activated_vehicle = "12MMM66" where user_id = "test_6";
+update users set activated_vehicle = "12MMM67" where user_id = "test_7";
+update users set activated_vehicle = "12MMM68" where user_id = "test_8";
+update users set activated_vehicle = "12MMM69a" where user_id = "test_9";

@@ -1,0 +1,21 @@
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM60", "honda", "accord", "red", 1990);
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM61", "hondb", "accore", "blue", 1991);
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM62", "hondc", "accorf", "bluf", 1992);
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM63", "hondd", "accorg", "blug", 1993);
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM64", "honde", "accorh", "bluh", 1994);
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM65", "hondf", "accori", "blui", 1995);
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM66", "hondg", "accorj", "bluj", 1996);
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM67", "hondh", "accork", "bluk", 1997);
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM68", "hondi", "accorl", "blul", 1998);
+insert into vehicles (plate, brand, model, color, year ) values ("12MMM69", "hondj", "accorn", "blum", 1999);
+
+insert into registered_vehicles (user_id, plate) values ("test_0", "12MMM60");
+insert into registered_vehicles (user_id, plate) values ("test_1", "12MMM61");
+insert into registered_vehicles (user_id, plate) values ("test_2", "12MMM62");
+insert into registered_vehicles (user_id, plate) values ("test_3", "12MMM63");
+insert into registered_vehicles (user_id, plate) values ("test_4", "12MMM64");
+insert into registered_vehicles (user_id, plate) values ("test_5", "12MMM65");
+insert into registered_vehicles (user_id, plate) values ("test_6", "12MMM66");
+insert into registered_vehicles (user_id, plate) values ("test_7", "12MMM67");
+insert into registered_vehicles (user_id, plate) values ("test_8", "12MMM68");
+insert into registered_vehicles (user_id, plate) values ("test_9", "12MMM69");
