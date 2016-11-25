@@ -15,8 +15,8 @@ class ParkingLot(Base):
     __tablename__ = 'parking_lot'
 
     plate = Column(String(7), ForeignKey('vehicles.plate'), primary_key=True)
-    latitude = Column(Float, nullable=False)
-    longitude = Column(Float, nullable=False)
+    latitude = Column(String(16), nullable=False)
+    longitude = Column(String(16), nullable=False)
     location = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     level = Column(Integer, nullable=True)

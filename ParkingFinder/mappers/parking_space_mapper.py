@@ -10,8 +10,8 @@ class ParkingSpaceMapper(Mapper):
     @staticmethod
     def _build_map(record):
         location = {
-            'longitude': record.longitude,
-            'latitude': record.latitude,
+            'longitude': float(record.longitude),
+            'latitude': float(record.latitude),
         }
         if record.level:
             location.update({'level': record.level})
@@ -45,8 +45,8 @@ class ParkingSpaceMapper(Mapper):
     def _to_model(cls, entity):
         params = {
             'plate': entity.plate,
-            'latitude': entity.location.latitude,
-            'longitude': entity.location.longitude,
+            'latitude': str(entity.location.latitude),
+            'longitude': str(entity.location.longitude),
             'created_at': entity.created_at,
         }
         if entity.location.level:

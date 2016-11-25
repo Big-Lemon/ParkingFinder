@@ -325,7 +325,8 @@ def test_check_in(http_client, base_url, access_token):
             'plate': plate,
             'location': {
                 'latitude': latitude,
-                'longitude': longitude
+                'longitude': longitude,
+                'location': 'UCLA'
             }
         })
     expect(AccessTokenRepository).read_one(
@@ -333,6 +334,7 @@ def test_check_in(http_client, base_url, access_token):
     ).and_return_future(
         access_token
     )
+    expect(module.TranslateAddressService).getAddressBylatlng(latitude, longitude).and_return_future(parking_space.location.location)
     expect(module)._verify_vehicle_belonging(
         user_id=access_token.user_id,
         plate=plate

@@ -21,7 +21,7 @@ def test_mapper():
     assert record['longitude'] == 123.123
     assert record['latitude'] == 45.123
     assert not record.get('is_active', None)
-    assert not record.get('distance', None)
+    assert record.get('distance') == 100
     assert record['expired_at'] == str(parking.expired_at)
 
     record = {

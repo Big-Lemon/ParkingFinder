@@ -24,8 +24,8 @@ def test_mapper():
     assert parking_space == entity
     model = module.ParkingSpaceMapper.to_model(entity)
     assert model.plate == entity.plate
-    assert model.latitude == entity.location.latitude
-    assert model.longitude == entity.location.longitude
+    assert float(model.latitude) == entity.location.latitude
+    assert float(model.longitude) == entity.location.longitude
     assert model.created_at == entity.created_at
 
     record = module.ParkingSpaceMapper.to_record(parking_space)
