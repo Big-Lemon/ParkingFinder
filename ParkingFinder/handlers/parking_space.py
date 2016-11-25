@@ -353,15 +353,18 @@ class ParkingLotHandler(BaseHandler):
         }
         the parking space around it
         return format:
-        {
-            "available_parking_spaces":[
-            "parking_space": {
-                "longitude": -117.844310,
-                "latitude": 34.044742,
-            }
-            "parking_space":{
-                "longitude": -117.844213,
-                "latitude": 34.044729,
+        {"available_parking_spaces": [
+            {
+            "latitude": 34.044742, 
+            "plate": "6DAY434", 
+            "longitude": -117.84431, 
+            "expired_at": "2017-11-24 23:36:26.222000"
+            }, 
+            {
+            "latitude": 34.044729, 
+            "plate": "6ELA725", 
+            "longitude": -117.844213, 
+            "expired_at": "2017-11-24 23:36:26.123000"
             }
             ]
         }
