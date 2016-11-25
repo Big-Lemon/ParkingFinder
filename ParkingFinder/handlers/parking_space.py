@@ -370,9 +370,8 @@ class ParkingLotHandler(BaseHandler):
         }
         """
         assert user_id
-        payload = json.loads(self.request.body)
-        longitude = payload.get("longitude", None)
-        latitude = payload.get("latitude", None)
+        longitude = self.get_argument("longitude", False)
+        latitude = self.get_argument("latitude", False)
         assert longitude and latitude
         print longitude
         print latitude
