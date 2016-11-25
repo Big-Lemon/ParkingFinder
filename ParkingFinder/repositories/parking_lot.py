@@ -40,7 +40,6 @@ class ParkingLotRepository(object):
 
         :return ParkingSpace:
         """
-
         with create_session() as session:
             parking_space.validate()
             _parking_space = ParkingSpaceMapper.to_model(parking_space)

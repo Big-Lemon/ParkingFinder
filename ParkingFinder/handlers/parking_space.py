@@ -12,8 +12,10 @@ from ParkingFinder.handlers.handler import BaseHandler
 from ParkingFinder.mappers.available_parking_space_mapper import AvailableParkingSpaceMapper
 from ParkingFinder.mappers.parking_space_mapper import ParkingSpaceMapper
 from ParkingFinder.mappers.vehicle_mapper import VehicleMapper
+from ParkingFinder.repositories.googleAPI import TranslateAddressService
 from ParkingFinder.repositories.parking_lot import ParkingLotRepository
 from ParkingFinder.repositories.vehicle_repository import VehicleRepository
+from ParkingFinder.repositories.available_parking_space_pool import AvailableParkingSpacePool
 from ParkingFinder.services.user import UserService
 from ParkingFinder.services.parking_space import ParkingSpaceService
 from ParkingFinder.services.user_request import UserRequestService, CanNotStopForwardingMessage
@@ -46,6 +48,7 @@ nn
                 'address': None,
                 'level': None
             }
+            ]
         }
 
         BAD_REQUEST: the user passed in is not valid or user terminates
@@ -312,10 +315,9 @@ class ParkingLotHandler(BaseHandler):
         plate = payload.get("plate", None)
         longitude = payload.get("longitude", None)
         latitude = payload.get("latitude", None)
-
         # TODO convert longitude & latitude to address before insert into parking lot
         assert plate and longitude and latitude
-
+        address = yield TranslateAddressService.getAddressBylatlng(latitude,longitude)
         is_valid_plate = yield _verify_vehicle_belonging(user_id=user_id, plate=plate)
         if is_valid_plate:
             parking_space = yield ParkingLotRepository.insert(
@@ -323,7 +325,8 @@ class ParkingLotHandler(BaseHandler):
                     'plate': plate,
                     'location': {
                         'longitude': longitude,
-                        'latitude': latitude
+                        'latitude': latitude,
+                        'location': str(address)
                     }
                 }))
             # remove user from user waiting pool has been handled in the
@@ -336,6 +339,49 @@ class ParkingLotHandler(BaseHandler):
             })
         else:
             raise InvalidArguments
+
+    @with_exception_handler
+    @with_token_validation
+    @coroutine
+    def get(self, user_id):
+        """
+        fetch nearby
+        input format
+        {
+            "longitude": -117.844379,
+            "latitude": 34.044742,
+        }
+        the parking space around it
+        return format:
+        {
+            "available_parking_spaces":[
+            "parking_space": {
+                "longitude": -117.844310,
+                "latitude": 34.044742,
+            }
+            "parking_space":{
+                "longitude": -117.844213,
+                "latitude": 34.044729,
+            }
+            ]
+        }
+        """
+        assert user_id
+        payload = json.loads(self.request.body)
+        longitude = payload.get("longitude", None)
+        latitude = payload.get("latitude", None)
+        assert longitude and latitude
+        print longitude
+        print latitude
+        nearby_available_parking_spaces = yield AvailableParkingSpacePool.read_many(longitude=longitude,latitude=latitude)
+        print nearby_available_parking_spaces
+        self.set_status(httplib.OK)
+        _available_parking_spaces = [AvailableParkingSpaceMapper.to_record(
+                entity=single_available_parking_space
+            ) for single_available_parking_space in nearby_available_parking_spaces]
+        self.write({
+                'available_parking_spaces': _available_parking_spaces
+            })
 
 
 class ServiceTerminateHanlder(BaseHandler):
@@ -358,10 +404,6 @@ class ServiceTerminateHanlder(BaseHandler):
             self.write({
                 'massage': 'too late to stop the service'
             })
-
-
-
-
 
 
 @coroutine

@@ -50,9 +50,9 @@ class ParkingSpaceMapper(Mapper):
             'created_at': entity.created_at,
         }
         if entity.location.level:
-            params.update({'level': entity.level})
+            params.update({'level': entity.location.level})
         if entity.location.location:
-            params.update({'location': entity.location})
+            params.update({'location': entity.location.location})
 
         return cls._MODEL(**params)
 

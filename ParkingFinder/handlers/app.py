@@ -23,6 +23,7 @@ app = Application([
     (r'/parkingSpace/reject/(.*)', RejectParkingSpaceHandler),
     (r'/parkingSpace/checkout/(.*)', ParkingLotHandler),
     (r'/parkingSpace/checkin/(.*)', ParkingLotHandler),
+    (r'/parkingSpace/fetchnearby/(.*)', ParkingLotHandler),
     (r'/parkingSpace/requester_terminate/(.*)', ServiceTerminateHanlder),
     (r'/user/logout', FacebookGraphLoginHandler),
 ], autoreload=True)
