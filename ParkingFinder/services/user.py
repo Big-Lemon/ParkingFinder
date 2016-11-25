@@ -169,7 +169,7 @@ class UserService(object):
                 if current_vehicle.plate == vehicle_plate:
                     exist = True
                     break
-            if exist and (user.activated_vehicle != vehicle_plate):
+            if exist:
                 user.activated_vehicle = vehicle_plate
                 _user = yield UserRepository.upsert(user=user)
             else:

@@ -86,13 +86,11 @@ class UserRequestService(object):
         except NoResultFound:
             # case where user stop the service
             for space in space_return:
-                modified_row = yield MatchedParkingList.update(
+                yield MatchedParkingList.update(
                     user_id=waiting_user.user_id,
                     plate=space.plate,
                     status='rejected'
                 )
-                if modified_row == 0:
-                    raise InvalidEntity
             raise InvalidArguments
 
     @classmethod
@@ -295,10 +293,8 @@ class UserRequestService(object):
                 location=location.location
             )
             if not list_of_available_space:
-                modified_row = yield WaitingUserPool.update(
+                yield WaitingUserPool.update(
                     user_id=waiting_user.user_id, is_active=True)
-                if modified_row == 0:
-                    raise InvalidEntity
 
                 spaces_return = yield cls._loop_checking_space_availability(waiting_user.user_id)
                 raise Return(spaces_return)

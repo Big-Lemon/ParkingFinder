@@ -49,5 +49,7 @@ class AvailableParkingSpaceMapper(Mapper):
             params['address'] = entity.location.location
         if entity.location.level:
             params['level'] = entity.location.level
+        if entity.distance:
+            params['distance'] = entity.distance
 
         return params

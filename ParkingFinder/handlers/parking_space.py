@@ -86,7 +86,7 @@ nn
 
         self.set_status(httplib.OK)
         self.write({
-            'available_parking_spaces': _spaces
+            'available_parking_spaces': _spaces or []
         })
 
 
@@ -346,11 +346,6 @@ class ParkingLotHandler(BaseHandler):
     def get(self, user_id):
         """
         fetch nearby
-        input format
-        {
-            "longitude": -117.844379,
-            "latitude": 34.044742,
-        }
         the parking space around it
         return format:
         {"available_parking_spaces": [
@@ -369,18 +364,20 @@ class ParkingLotHandler(BaseHandler):
             ]
         }
         """
-        assert user_id
         longitude = self.get_argument("longitude", False)
         latitude = self.get_argument("latitude", False)
-        assert longitude and latitude
-        print longitude
-        print latitude
-        nearby_available_parking_spaces = yield AvailableParkingSpacePool.read_many(longitude=longitude,latitude=latitude)
-        print nearby_available_parking_spaces
-        self.set_status(httplib.OK)
+        assert user_id and longitude and latitude
+
+        nearby_available_parking_spaces = yield AvailableParkingSpacePool.read_many(
+            longitude=longitude,
+            latitude=latitude
+        )
+
         _available_parking_spaces = [AvailableParkingSpaceMapper.to_record(
                 entity=single_available_parking_space
             ) for single_available_parking_space in nearby_available_parking_spaces]
+
+        self.set_status(httplib.OK)
         self.write({
                 'available_parking_spaces': _available_parking_spaces
             })

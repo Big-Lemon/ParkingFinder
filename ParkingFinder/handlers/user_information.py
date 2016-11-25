@@ -81,11 +81,14 @@ class UserInformationHandler(BaseHandler):
             # since NotFound has been handled in get_user_detail() so no need to try here
             # but we have to handle the invalid entity exception
             yield UserService.register_vehicle(user.user_id, vehicle)
+            self.set_status(httplib.OK)
 
         if activated_vehicle_plate:
             # active_vehicle will throw NotFound if the user
             # doesn't own the vehicle with given plate
-            user = yield UserService.activate_vehicle(
+            yield UserService.activate_vehicle(
                 user_id=user.user_id,
                 vehicle_plate=activated_vehicle_plate
             )
+            self.set_status(httplib.OK)
+

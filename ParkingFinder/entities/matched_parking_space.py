@@ -10,6 +10,8 @@ from schematics.types import (
 
 from ParkingFinder.entities.entity import Entity
 
+logger = config.get_logger('entity.matchedParkingSpace')
+
 
 class MatchedParkingSpace(Entity):
     """
@@ -45,6 +47,12 @@ class MatchedParkingSpace(Entity):
         else:
             current = datetime.utcnow()
             delta = config.get('posted_parking.timeout')
+            logger.info({
+                'matched_parking_space': self,
+                'self.created_at + timedelta(0, delta)': self.created_at + timedelta(0, delta),
+                'current': current,
+            })
+
             return self.created_at + timedelta(0, delta) < current
 
     @property

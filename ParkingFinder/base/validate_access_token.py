@@ -13,7 +13,7 @@ def with_token_validation(f):
     @coroutine
     @functools.wraps(f)
     def wrapper(self, user_id, *args, **params):
-        payload = json.loads(self.request.body)
+        payload = json.loads(self.request.body or '{}')
         access_token = self.get_argument('access_token', payload.get("access_token", False))
         try:
             if not access_token:

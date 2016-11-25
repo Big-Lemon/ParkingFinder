@@ -59,7 +59,6 @@ class MatchedParkingList(object):
 
         with create_session() as session:
             matched_parking_list = session.query(MatchedParkingSpaceList).filter(
-                MatchedParkingSpaceList.user_id == user_id and
                 MatchedParkingSpaceList.plate == plate
             ).one()
             matched_parking_list.status = status
