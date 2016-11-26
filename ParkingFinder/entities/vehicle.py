@@ -10,7 +10,7 @@ class Vehicle(Entity):
     Vehicle Entity
     """
     # required variables
-    plate = StringType(min_length=7, max_length=7, required=True)
+    plate = StringType(min_length=1, max_length=7, required=True)
     brand = StringType(min_length=1, max_length=32, required=True)
     model = StringType(min_length=1, max_length=32, required=True)
     color = StringType(min_length=1, max_length=32, required=True)
