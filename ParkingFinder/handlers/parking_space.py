@@ -17,6 +17,7 @@ from ParkingFinder.repositories.googleAPI import TranslateAddressService
 from ParkingFinder.repositories.parking_lot import ParkingLotRepository
 from ParkingFinder.repositories.vehicle_repository import VehicleRepository
 from ParkingFinder.repositories.available_parking_space_pool import AvailableParkingSpacePool
+from ParkingFinder.repositories.waiting_user_pool import WaitingUserPool
 from ParkingFinder.services.user import UserService
 from ParkingFinder.services.parking_space import ParkingSpaceService
 from ParkingFinder.services.user_request import UserRequestService, CanNotStopForwardingMessage
@@ -274,9 +275,8 @@ class ParkingLotHandler(BaseHandler):
         is_valid_plate = yield _verify_vehicle_belonging(user_id=user_id, plate=plate)
         if is_valid_plate:
             # TODO if the user checkout before connection established with a waiting user.
-            removed = yield ParkingLotRepository.remove(plate=plate)
-            if not removed:
-                raise InvalidArguments
+            yield AvailableParkingSpacePool.remove(plate=plate)
+            yield ParkingLotRepository.remove(plate=plate)
             self.set_status(httplib.OK)
 
         else:
@@ -321,6 +321,7 @@ class ParkingLotHandler(BaseHandler):
         if is_valid_plate:
             try:
                 parking_space = yield ParkingLotRepository.read_one(plate=plate)
+                yield WaitingUserPool.remove(user_id=user_id)
             except NoResultFound:
                 parking_space = yield ParkingLotRepository.upsert(
                     parking_space=ParkingSpace({
