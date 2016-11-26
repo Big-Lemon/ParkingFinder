@@ -204,6 +204,7 @@ class ReserveParkingSpaceHandler(BaseHandler):
             'parking_space': _parking_space
         })
 
+
 class RejectParkingSpaceHandler(BaseHandler):
 
     @with_exception_handler
@@ -238,20 +239,26 @@ class RejectParkingSpaceHandler(BaseHandler):
         :return:
         """
         assert user_id
-        available_parking_spaces = yield UserRequestService.reject_all_parking(user_id=user_id)
-        self.set_status(httplib.OK)
 
-        if available_parking_spaces:
-            _available_parking_spaces = [AvailableParkingSpaceMapper.to_record(
-                entity=available_parking_space
-            ) for available_parking_space in available_parking_spaces]
-            self.write({
-                    'available_parking_spaces': _available_parking_spaces
+        try:
+            waiting_user = yield WaitingUserPool.read_one(user_id=user_id)
+
+            available_parking_spaces = yield UserRequestService.reject_all_parking(waiting_user=waiting_user)
+            self.set_status(httplib.OK)
+
+            if available_parking_spaces:
+                _available_parking_spaces = [AvailableParkingSpaceMapper.to_record(
+                    entity=available_parking_space
+                ) for available_parking_space in available_parking_spaces]
+                self.write({
+                        'available_parking_spaces': _available_parking_spaces
+                    })
+            else:
+                self.write({
+                    'available_parking_spaces': []
                 })
-        else:
-            self.write({
-                'available_parking_spaces': []
-            })
+        except NoResultFound:
+            raise NotFound
 
 
 class ParkingLotHandler(BaseHandler):
