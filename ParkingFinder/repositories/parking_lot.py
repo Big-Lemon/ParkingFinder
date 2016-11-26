@@ -48,6 +48,28 @@ class ParkingLotRepository(object):
 
     @classmethod
     @coroutine
+    def upsert(cls, parking_space):
+        """
+        Insert a parking space to the parking lot
+
+        :return ParkingSpace:
+        """
+        with create_session() as session:
+            try:
+                _parking_space = session.query(ParkingLot).filter(
+                    ParkingLot.plate == parking_space.plate
+                ).one()
+                _parking_space.latitude = str(parking_space.location.latitude)
+                _parking_space.longitude = str(parking_space.location.longitude)
+                raise Return(parking_space)
+            except NoResultFound:
+                parking_space.validate()
+                _parking_space = ParkingSpaceMapper.to_model(parking_space)
+                session.add(_parking_space)
+                raise Return(parking_space)
+
+    @classmethod
+    @coroutine
     def remove(cls, plate):
         """
         Remove a parking space by the plate from parking lot

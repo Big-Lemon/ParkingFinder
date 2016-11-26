@@ -1,6 +1,7 @@
 import httplib
 import json
 
+from sqlalchemy.orm.exc import NoResultFound
 from tornado.gen import coroutine, Return
 
 from ParkingFinder.base.errors import InvalidArguments, NotFound, with_exception_handler
@@ -88,8 +89,6 @@ nn
         self.write({
             'available_parking_spaces': _spaces or []
         })
-
-
 
 
 class PostParkingSpaceHandler(BaseHandler):
@@ -320,15 +319,18 @@ class ParkingLotHandler(BaseHandler):
         address = yield TranslateAddressService.getAddressBylatlng(latitude,longitude)
         is_valid_plate = yield _verify_vehicle_belonging(user_id=user_id, plate=plate)
         if is_valid_plate:
-            parking_space = yield ParkingLotRepository.insert(
-                parking_space=ParkingSpace({
-                    'plate': plate,
-                    'location': {
-                        'longitude': longitude,
-                        'latitude': latitude,
-                        'location': str(address)
-                    }
-                }))
+            try:
+                parking_space = yield ParkingLotRepository.read_one(plate=plate)
+            except NoResultFound:
+                parking_space = yield ParkingLotRepository.upsert(
+                    parking_space=ParkingSpace({
+                        'plate': plate,
+                        'location': {
+                            'longitude': longitude,
+                            'latitude': latitude,
+                            'location': str(address)
+                        }
+                    }))
             # remove user from user waiting pool has been handled in the
             # user_request so do not handle this here
             # yield UserRequestService.service_terminate(user_id=user_id)
