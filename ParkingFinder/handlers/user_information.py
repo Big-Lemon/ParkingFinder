@@ -11,6 +11,7 @@ from ParkingFinder.base.validate_access_token import with_token_validation
 from ParkingFinder.entities.vehicle import Vehicle
 from ParkingFinder.handlers.handler import BaseHandler
 from ParkingFinder.mappers.user_mapper import UserMapper
+from ParkingFinder.repositories.access_token_repository import AccessTokenRepository
 from ParkingFinder.services.user import UserService
 
 
@@ -92,3 +93,17 @@ class UserInformationHandler(BaseHandler):
             )
             self.set_status(httplib.OK)
 
+    @with_exception_handler
+    @with_token_validation
+    @coroutine
+    def put(self, user_id):
+        """
+        logout
+        :param user_id:
+        :return:
+        """
+        payload = json.loads(self.request.body or '{}')
+        access_token = payload.get("access_token", None)
+        assert access_token and user_id
+        yield AccessTokenRepository.remove(access_token=access_token)
+        self.write(httplib.OK)
