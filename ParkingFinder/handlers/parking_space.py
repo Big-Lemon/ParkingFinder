@@ -282,8 +282,14 @@ class ParkingLotHandler(BaseHandler):
         is_valid_plate = yield _verify_vehicle_belonging(user_id=user_id, plate=plate)
         if is_valid_plate:
             # TODO if the user checkout before connection established with a waiting user.
-            yield AvailableParkingSpacePool.remove(plate=plate)
-            yield ParkingLotRepository.remove(plate=plate)
+            try:
+                yield AvailableParkingSpacePool.remove(plate=plate)
+            except NoResultFound:
+                pass
+            try:
+                yield ParkingLotRepository.remove(plate=plate)
+            except NoResultFound:
+                pass
             self.set_status(httplib.OK)
 
         else:
