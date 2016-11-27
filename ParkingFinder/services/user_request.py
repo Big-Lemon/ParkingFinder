@@ -59,7 +59,11 @@ class UserRequestService(object):
         })
         space_return = []
         try:
-            user_info = yield WaitingUserPool.read_one(user_id=waiting_user.user_id)
+            available_parking_list = yield MatchedParkingList.read_many(user_id=waiting_user.user_id)
+            if not available_parking_list:
+                yield WaitingUserPool.remove(user_id=waiting_user.user_id)
+                raise NoResultFound
+
             # TODO if user exist, update user geographical location
             try:
                 space_return = yield cls._loop_checking_space_availability(user_id=waiting_user.user_id)
