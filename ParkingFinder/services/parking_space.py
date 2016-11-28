@@ -261,8 +261,4 @@ class ParkingSpaceService(object):
                 plate=posted_parking_space.plate,
                 is_active=True
             )
-            logger.info({
-                'message': 'no waiting user found',
-                'parking_space': posted_parking_space
-            })
             raise Return(None)

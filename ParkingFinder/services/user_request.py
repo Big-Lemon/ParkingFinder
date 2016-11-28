@@ -245,11 +245,6 @@ class UserRequestService(object):
         """
         list_of_matched_space = yield MatchedParkingList.read_many(user_id=user_id)
         if not list_of_matched_space:
-            logger.info({
-                'message': 'no available parking spaces',
-                'user_id': user_id,
-            })
-
             raise NoResultFoundInMatchedSpaceTable
 
         spaces_return = []
