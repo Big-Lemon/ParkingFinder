@@ -39,12 +39,16 @@ from ParkingFinder.services.real_time_location_service import RealTimeLocationSe
 
 logger = config.get_logger('service.parking_space')
 
-awaiting_matching_time_out = config.get('matching.matching_timeout')
+# awaiting_matching_time_out = config.get('matching.matching_timeout')
+awaiting_matching_time_out = None
 awaiting_matching_duration = config.get('matching.matching_duration')
-awaiting_matching_repeat_times = config.get('matching.matching_repeat_count')
-awaiting_action_time_out = config.get('matching.awaiting_action_timeout')
+# awaiting_matching_repeat_times = config.get('matching.matching_repeat_count')
+awaiting_matching_repeat_times = None
 awaiting_action_duration = config.get('matching.awaiting_action_duration')
-awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_count')
+# awaiting_action_time_out = config.get('matching.awaiting_action_timeout')
+# awaiting_action_repeat_times = config.get('matching.awaiting_action_repeat_count')
+awaiting_action_time_out = None
+awaiting_action_repeat_times = None
 
 
 class AwaitingAction(BaseError):
