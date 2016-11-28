@@ -202,10 +202,6 @@ class ParkingSpaceService(object):
                 raise NoResultFound
 
             elif matched_parking_space.is_awaiting:
-                logger.info({
-                    'message': 'still waiting user action',
-                    'matched_parking_space': matched_parking_space
-                })
                 # still waiting user's action
                 raise AwaitingAction
 
