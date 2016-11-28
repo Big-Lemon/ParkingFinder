@@ -61,6 +61,10 @@ class UserRequestService(object):
         try:
             available_parking_list = yield MatchedParkingList.read_many(user_id=waiting_user.user_id)
             if not available_parking_list:
+                logger.info({
+                    'message': 'update user in waiting pool',
+                    'waiting user': waiting_user
+                })
                 yield WaitingUserPool.remove(user_id=waiting_user.user_id)
                 raise NoResultFound
 
@@ -256,10 +260,6 @@ class UserRequestService(object):
                 except NoResultFound:
                     raise InvalidEntity
         if not spaces_return:
-            logger.info({
-                'message': 'no available parking spaces',
-                'user_id': user_id,
-            })
             raise NoResultFoundInMatchedSpaceTable
         else:
             raise Return(spaces_return)

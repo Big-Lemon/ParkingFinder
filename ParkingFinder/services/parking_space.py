@@ -75,10 +75,6 @@ class ParkingSpaceService(object):
         :raises Timeout: timeout, user can send post request again to continue listening the status
         :raises NotFound: the vehicle with given plate have not been checked in yet
         """
-        logger.info({
-            'message': 'awaiting matching',
-            'plate': plate
-        })
 
         try:
             parking_space = yield AvailableParkingSpacePool.read_one(plate=plate)
