@@ -19,6 +19,6 @@ class User(Entity):
 
     # non-required variables
     profile_picture_url = URLType(max_length=255, required=False)
-    activated_vehicle = StringType(max_length=7, required=False)
+    activated_vehicle = StringType(min_length=1, max_length=7, required=False)
     owned_vehicles = ListType(ModelType(Vehicle))
 

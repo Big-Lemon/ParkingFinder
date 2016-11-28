@@ -6,9 +6,14 @@ export PYTHONPATH=.
 .PHONY: bootstrap
 bootstrap: clean
 	pip install -r requirements.txt
+	git clone https://github.com/andymccurdy/redis-py.git; cd redis-py; python setup.py install
 
 .PHONY: bootstrap_db
-bootstrap_db: drop_db create_db upgrade_db
+bootstrap_db: flush_redis drop_db create_db upgrade_db
+
+.PHONY: flush_redis
+flush_redis:
+	python database.py flush_redis
 
 .PHONY: drop_db
 drop_db:
@@ -20,13 +25,16 @@ create_db:
 	python database.py create
 	echo "create database"
 
+.PHONY: serve_redis
+	redis-server
+
 .PHONY: serve
 serve:
 	python serve.py
 
 .PHONY: test
 test: clean bootstrap_db
-	py.test -s -v --cov-report term-missing --cov=ParkingFinder $(test_folder)
+	py.test -v --pastebin=all --cov-report term-missing --cov=ParkingFinder $(test_folder)
 
 .PHONY: clean
 clean:

@@ -1,49 +1,58 @@
-from ParkingFinder.tables.check_in_parking_space import CheckInParkingSpace
-from ParkingFinder.tables.check_out_parking_space import CheckOutParkingSpace
+from ParkingFinder.tables.parking_lot import ParkingLot
 from ParkingFinder.entities.parking_space import ParkingSpace
 from ParkingFinder.mappers import Mapper
 
 
 class ParkingSpaceMapper(Mapper):
     _ENTITY = ParkingSpace
+    _MODEL = ParkingLot
 
     @staticmethod
     def _build_map(record):
-        params = {
-            'user_id': record.user_id,
-            'latitude': record.latitude,
-            'longitude': record.longitude,
-            'created_at': record.created_at,
+        location = {
+            'longitude': float(record.longitude),
+            'latitude': float(record.latitude),
         }
         if record.level:
-            params.update({'level': record.level})
-        if record.description:
-            params.update({'description': record.description})
+            location.update({'level': record.level})
+        if record.location:
+            location.update({'location': record.location})
+        params = {
+            'plate': record.plate,
+            'location': location,
+            'created_at': record.created_at,
+        }
 
         return params
 
     @staticmethod
     def _to_record(entity):
-        params = entity.to_primitive()
+
+        params = {
+            'plate': entity.plate,
+            'latitude': entity.location.latitude,
+            'longitude': entity.location.longitude,
+        }
+
+        if entity.location.level:
+            params.update({'level': entity.location.level})
+        if entity.location.location:
+            params.update({'address': entity.location.location})
 
         return params
 
-
-class CheckingInParkingSpaceMapper(ParkingSpaceMapper):
-    _MODEL = CheckInParkingSpace
-
     @classmethod
     def _to_model(cls, entity):
-        params = entity.to_primitive()
+        params = {
+            'plate': entity.plate,
+            'latitude': str(entity.location.latitude),
+            'longitude': str(entity.location.longitude),
+            'created_at': entity.created_at,
+        }
+        if entity.location.level:
+            params.update({'level': entity.location.level})
+        if entity.location.location:
+            params.update({'location': entity.location.location})
 
         return cls._MODEL(**params)
 
-
-class CheckingOutParkingSpaceMapper(ParkingSpaceMapper):
-    _MODEL = CheckOutParkingSpace
-
-    @classmethod
-    def _to_model(cls, entity):
-        params = entity.to_primitive()
-
-        return cls._MODEL(**params)

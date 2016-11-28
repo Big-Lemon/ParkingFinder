@@ -6,5 +6,25 @@
         "username": "root",
         "password": "development",
         "database": "test"
+    },
+    "matching": {
+        "matching_repeat_count": 2,
+        "awaiting_action_repeat_count": 2,
+        "num_display_parking_spaces": 10,
+        "num_pop_parking_spaces": 2,
+        "radius": 500,
+        "unit": "m"
+    },
+    "posted_parking": {
+        "timeout": 15
+    },
+    "redis": {
+        "port": "6379",
+        "host": "localhost",
+        "db": 0
+    },
+    "available_parking": {
+        "waiting_duration": 15,
+        "unit": "sec"
     }
 }

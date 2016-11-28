@@ -22,4 +22,15 @@ debconf-set-selections <<< "mysql-server-5.5 mysql-server/root_password_again pa
 echo "Installing MySQL"
 apt-get install mysql-server-5.5 -y > /dev/null
 
+apt-get install git -y > /dev/null
+
+wget http://download.redis.io/redis-stable.tar.gz
+tar xvzf redis-stable.tar.gz
+cd redis-stable
+make
+cp src/redis-cli /usr/local/bin/
+cp src/redis-server /usr/local/bin/
+cd ..
+rm redis-stable.tar.gz
+
 echo "Provision End"

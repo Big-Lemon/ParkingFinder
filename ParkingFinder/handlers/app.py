@@ -4,18 +4,29 @@ from ParkingFinder.handlers import HealthHandler
 from ParkingFinder.handlers import FacebookGraphLoginHandler
 from ParkingFinder.handlers.user_information import UserInformationHandler
 from ParkingFinder.handlers.parking_space import (
-    ParkingSpaceNearbyFetchHandler,
-    ParkingSpaceReserveHandler
+    ParkingLotHandler,
+    PostParkingSpaceHandler,
+    RejectParkingSpaceHandler,
+    RequestParkingSpaceHandler,
+    ReserveParkingSpaceHandler,
+    ServiceTerminateHanlder
 )
 
 app = Application([
+    (r'/', HealthHandler),
     (r'/health', HealthHandler),
     (r'/auth/facebook', FacebookGraphLoginHandler),
     (r'/user/(.*)', UserInformationHandler),
-    (r'/parkingSpace/reserve/(.*)', ParkingSpaceReserveHandler),
-    (r'/parkingSpace/nearby/(.*)', ParkingSpaceNearbyFetchHandler),
+    (r'/parkingSpace/post/(.*)', PostParkingSpaceHandler),
+    (r'/parkingSpace/request/(.*)', RequestParkingSpaceHandler),
+    (r'/parkingSpace/reserve/(.*)', ReserveParkingSpaceHandler),
+    (r'/parkingSpace/reject/(.*)', RejectParkingSpaceHandler),
+    (r'/parkingSpace/checkout/(.*)', ParkingLotHandler),
+    (r'/parkingSpace/checkin/(.*)', ParkingLotHandler),
+    (r'/parkingSpace/fetchnearby/(.*)', ParkingLotHandler),
+    (r'/parkingSpace/requester_terminate/(.*)', ServiceTerminateHanlder),
     (r'/user/logout', FacebookGraphLoginHandler),
-])
+], autoreload=True)
 
 """
 ==============================================================================
