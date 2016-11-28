@@ -47,11 +47,6 @@ class MatchedParkingSpace(Entity):
         else:
             current = datetime.utcnow()
             delta = config.get('posted_parking.timeout')
-            logger.info({
-                'matched_parking_space': self,
-                'self.created_at + timedelta(0, delta)': self.created_at + timedelta(0, delta),
-                'current': current,
-            })
 
             return self.created_at + timedelta(0, delta) < current
 
