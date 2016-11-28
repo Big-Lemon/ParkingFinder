@@ -75,10 +75,18 @@ class UserRequestService(object):
                 pass
         except NoResultFound:
             try:
+                logger.info({
+                    'message': 'new waiting user get into the pool',
+                    'waiting user': waiting_user
+                })
                 inserted_user = yield WaitingUserPool.insert(waiting_user=waiting_user)
             except IntegrityError:
                 raise InvalidEntity
             try:
+                logger.info({
+                    'message': 'checking space availability',
+                    'waiting user': waiting_user
+                })
                 space_return = yield cls._checking_space_availability(waiting_user=waiting_user)
             except Timeout:
                 pass
@@ -292,6 +300,11 @@ class UserRequestService(object):
                 location=location.location
             )
             if not list_of_available_space:
+                logger.info({
+                    'message': 'insert user to active pool',
+                    'waiting user': waiting_user
+                })
+
                 yield WaitingUserPool.update(
                     user_id=waiting_user.user_id, is_active=True)
 
